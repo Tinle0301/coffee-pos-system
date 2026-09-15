@@ -21,10 +21,14 @@ is a temporary placeholder only, to prove the Vercel deploy pipeline works.
 - `assets/` — images, icons, static files
 - `tests/` — frontend tests
 
+## Ownership
+
+Bismah Farooq, Minh Tri Chau.
+
 ## Screens
 
 From the 491A boundary objects. Each row: screen, use case(s) it serves, and
-owner (fill in once the 2 frontend teammates are assigned).
+owner (fill in which of the two teammates above owns each screen).
 
 | Screen                     | Use Case(s)                        | Owner |
 |-----------------------------|-------------------------------------|-------|

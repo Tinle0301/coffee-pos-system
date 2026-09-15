@@ -11,13 +11,13 @@ managed entirely through GitHub.
 - Ryan Grubert
 - Trong Nghia Le
 
-Two sub-teams working in parallel (assignment placeholder — replace with
-actual names):
+Two sub-teams working in parallel:
 
-- **frontend/** (2 people: _TBD_, _TBD_) — everything the barista sees.
-  Never writes SQL directly.
-- **backend/** (3 people: _TBD_, _TBD_, _TBD_) — schema, migrations, RLS
-  policies, database functions, and the data-access layer.
+- **frontend/** (2 people: Bismah Farooq, Minh Tri Chau) — everything the
+  barista sees. Never writes SQL directly.
+- **backend/** (3 people: Trung Tin Le, Ryan Grubert, Trong Nghia Le) —
+  schema, migrations, RLS policies, database functions, and the
+  data-access layer.
 
 They meet at [docs/API_CONTRACT.md](docs/API_CONTRACT.md).
 

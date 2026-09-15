@@ -6,7 +6,7 @@ layer. Never imports from `frontend/`. The two sides meet only at
 
 ## Ownership
 
-3 people (names TBD — placeholder, replace with the assigned teammates).
+Trung Tin Le, Ryan Grubert, Trong Nghia Le.
 
 ## Layout
 

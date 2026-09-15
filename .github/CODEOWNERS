@@ -1,11 +1,12 @@
 # CODEOWNERS
-# Replace these placeholder handles with the actual GitHub usernames once
-# the 2/3 sub-team split is assigned (see README.md Team section).
+# Sub-team split is assigned (see README.md Team section), but these are
+# still placeholder GitHub handles — replace each with the teammate's
+# actual GitHub username before this file takes effect.
 
-# Frontend sub-team (2 people)
+# Frontend sub-team: Bismah Farooq, Minh Tri Chau
 /frontend/ @frontend-owner-1 @frontend-owner-2
 
-# Backend sub-team (3 people)
+# Backend sub-team: Trung Tin Le, Ryan Grubert, Trong Nghia Le
 /backend/ @backend-owner-1 @backend-owner-2 @backend-owner-3
 
 # The contract both sides must agree on — owned by everyone
