@@ -1,0 +1,72 @@
+name: User Story
+description: A user-facing feature or piece of work
+title: "[STORY] "
+labels: ["user-story"]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: Story
+      description: "As a <role>, I want <functionality> so that <reason>."
+      placeholder: "As a barista, I want to modify an order before checkout so that I can fix mistakes without cancelling it."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: story-points
+    attributes:
+      label: Story Points
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "8"
+        - "13"
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What must be true for this story to be considered done.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: use-case
+    attributes:
+      label: Related Use Case Number
+      description: See docs/USE_CASES.md
+      options:
+        - "1 - Login/Logout"
+        - "2 - Create Order"
+        - "3 - Modify Order"
+        - "4 - Process Payment"
+        - "5 - Update Order Status"
+        - "6 - View Menu"
+        - "7 - View Active Orders Queue"
+        - "8 - Manage Menu Items"
+        - "9 - Manage Inventory"
+        - "10 - View Sales Reports"
+        - "11 - Export Reports"
+        - "12 - Manage Staff Accounts"
+        - "13 - Process Refund"
+        - "14 - View Transaction Logs"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: owning-side
+    attributes:
+      label: Owning Side
+      options:
+        - Frontend
+        - Backend
+        - Both
+    validations:
+      required: true

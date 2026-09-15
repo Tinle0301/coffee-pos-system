@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
+  backend:
+    name: Backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply migrations
+        run: |
+          for f in backend/migrations/*.sql; do
+            echo "Applying $f"
+            PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -f "$f"
+          done
+
+      - name: Load seed data
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d postgres -f backend/seed/seed.sql
+
+      - name: Run RLS tests
+        run: |
+          echo "See backend/tests/README.md — test runner TBD once chosen."
+          # Placeholder: replace with `supabase test db` or the JS suite
+          # once backend/tests/ has real tests.
+
+  frontend:
+    name: Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Passing stub
+        run: |
+          echo "Frontend stack not chosen yet — see docs/FRONTEND_DECISION.md."
+          echo "Fill this job in (lint/build/test) once option A/B/C/D is decided."

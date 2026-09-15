@@ -1,0 +1,12 @@
+# CODEOWNERS
+# Replace these placeholder handles with the actual GitHub usernames once
+# the 2/3 sub-team split is assigned (see README.md Team section).
+
+# Frontend sub-team (2 people)
+/frontend/ @frontend-owner-1 @frontend-owner-2
+
+# Backend sub-team (3 people)
+/backend/ @backend-owner-1 @backend-owner-2 @backend-owner-3
+
+# The contract both sides must agree on — owned by everyone
+/docs/API_CONTRACT.md @frontend-owner-1 @frontend-owner-2 @backend-owner-1 @backend-owner-2 @backend-owner-3

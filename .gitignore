@@ -1,0 +1,23 @@
+# Node
+node_modules/
+
+# Env
+.env
+.env.local
+
+# Supabase local files
+.supabase/
+supabase/.branches/
+supabase/.temp/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Python artifacts (frontend may go this way, see docs/FRONTEND_DECISION.md)
+__pycache__/
+.venv/
+*.pyc

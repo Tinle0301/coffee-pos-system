@@ -1,0 +1,30 @@
+# Supabase CLI project config.
+# Generated/managed by `supabase init` / `supabase link` — see docs/SETUP.md.
+# project_id is set once the team links this repo to a real Supabase project.
+
+project_id = "coffee-pos-system"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = []
+jwt_expiry = 3600
+enable_signup = false
+
+[realtime]
+enabled = true
