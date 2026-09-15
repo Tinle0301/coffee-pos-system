@@ -8,9 +8,18 @@ request.
 ## Branch naming
 
 ```
-feature/<issue-number>-<short-description>
+feature/<jira-task-label>-<short-description>
 ```
-Example: `feature/17-refund-flow`.
+Example: `feature/A-17-refund-flow`.
+
+## Commit messages and PR titles
+
+Prefix with the Jira task label, e.g. `[A-17] Add refund confirmation
+dialog`. This is required, not just a nicety — the graded per-sprint Code
+Contributions report (see
+[docs/WORKFLOW.md](docs/WORKFLOW.md#code-contributions-reporting-sprint-grading))
+is compiled from Jira task labels tied to committed files, so untagged
+commits can't be counted.
 
 ## Reviews
 

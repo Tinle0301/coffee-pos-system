@@ -42,7 +42,14 @@ installing the CLI, running migrations, loading seed data, and env vars.
 
 ## Project management
 
-Work is tracked as GitHub Issues on a GitHub Projects board with columns:
+**Sprint planning and task numbers are tracked in Jira** — Jira project:
+_TBD, fill in the URL once created._ Every commit, PR, and the graded
+per-sprint Code Contributions report (see
+[docs/WORKFLOW.md](docs/WORKFLOW.md#code-contributions-reporting-sprint-grading))
+reference Jira task labels (e.g. `A-22`), not GitHub issue numbers.
+
+GitHub Issues are still used for bug reports and lightweight discussion,
+tracked on a GitHub Projects board with columns:
 
 ```
 Backlog → Sprint → In Progress → Review → Done
@@ -60,5 +67,6 @@ Issue templates: [user story](.github/ISSUE_TEMPLATE/user_story.yml),
 - [FRONTEND_DECISION.md](docs/FRONTEND_DECISION.md) — frontend stack ADR
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) — why Supabase + Vercel, no app server
 - [SETUP.md](docs/SETUP.md) — onboarding
-- [WORKFLOW.md](docs/WORKFLOW.md) — how the sub-teams collaborate
+- [WORKFLOW.md](docs/WORKFLOW.md) — how the sub-teams collaborate, and the graded Code Contributions report format
+- [sprint-reports/TEMPLATE.md](docs/sprint-reports/TEMPLATE.md) — copy per sprint for the Code Contributions report
 - [CONTRIBUTING.md](CONTRIBUTING.md) — branching, reviews, contribution rules
