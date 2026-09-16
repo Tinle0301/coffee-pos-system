@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<!--
+  smoke-test.html — Coffee POS System
+
+  DEVELOPMENT TOOL. Delete this file or block it before the final presentation.
+
+  Open this page first, before writing any feature code. It proves the whole
+  stack works end to end: config -> client -> security policies -> login ->
+  data -> logout.
+
+  Read the checks carefully: three of them PASS only when access is BLOCKED.
+  An anonymous user who can read the menu is a security failure, not a success.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coffee POS — Stack Smoke Test</title>
+<style>
+  :root { --pass:#0a7d38; --fail:#c0392b; --skip:#8a8a8a; --line:#e3e3e3; }
+  body { font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         margin: 0; padding: 24px; max-width: 760px; background:#fafafa; color:#1c1c1c; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.sub { color:#666; margin: 0 0 24px; }
+  fieldset { border:1px solid var(--line); border-radius:8px; padding:16px; margin-bottom:20px; background:#fff; }
+  legend { font-weight:600; padding:0 6px; }
+  label { display:block; font-size:13px; color:#555; margin-top:10px; }
+  input { width:100%; box-sizing:border-box; padding:10px; margin-top:4px;
+          border:1px solid var(--line); border-radius:6px; font-size:14px; font-family:inherit; }
+  button { margin-top:16px; padding:12px 20px; font-size:15px; font-weight:600;
+           border:0; border-radius:6px; background:#1c1c1c; color:#fff; cursor:pointer; min-height:44px; }
+  button:disabled { opacity:.5; cursor:default; }
+  .check { border:1px solid var(--line); border-left-width:4px; border-radius:6px;
+           padding:12px 14px; margin-bottom:10px; background:#fff; }
+  .check.pass { border-left-color: var(--pass); }
+  .check.fail { border-left-color: var(--fail); }
+  .check.skip { border-left-color: var(--skip); }
+  .status { font-weight:700; letter-spacing:.04em; }
+  .pass .status { color: var(--pass); }
+  .fail .status { color: var(--fail); }
+  .skip .status { color: var(--skip); }
+  .what { color:#555; font-size:13px; margin-top:4px; }
+  .detail { font-family: ui-monospace, Menlo, monospace; font-size:12px; color:#444;
+            background:#f4f4f4; padding:8px; border-radius:4px; margin-top:8px; white-space:pre-wrap; }
+  #summary { font-weight:600; margin:18px 0 10px; }
+</style>
+</head>
+<body>
+
+<h1>Coffee POS — Stack Smoke Test</h1>
+<p class="sub">Proves config, database, security policies and auth all work before anyone writes feature code.</p>
+
+<fieldset>
+  <legend>Connection</legend>
+  <label>Supabase URL
+    <input id="url" placeholder="https://xxxxx.supabase.co">
+  </label>
+  <label>Publishable key (sb_publishable_…)
+    <input id="key" placeholder="sb_publishable_...">
+  </label>
+  <label>Test barista email
+    <input id="email" value="barista@test.com">
+  </label>
+  <label>Test barista password
+    <input id="password" type="password" placeholder="from docs/TESTING.md">
+  </label>
+  <button id="run">Run smoke test</button>
+  <p class="what">Values are saved in this browser only (localStorage). Nothing is committed. Never paste a secret key here — the publishable key is the right one.</p>
+</fieldset>
+
+<div id="summary"></div>
+<div id="results"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+const $ = id => document.getElementById(id)
+const results = $('results')
+
+// Restore saved config
+for (const f of ['url','key','email']) {
+  try { $(f).value = localStorage.getItem('smoke_'+f) || $(f).value } catch {}
+}
+
+function report(n, title, ok, what, detail) {
+  const div = document.createElement('div')
+  div.className = 'check ' + (ok === null ? 'skip' : ok ? 'pass' : 'fail')
+  div.innerHTML = `<span class="status">${ok === null ? 'SKIP' : ok ? 'PASS' : 'FAIL'}</span>
+    &nbsp;${n}. ${title}<div class="what">${what}</div>` +
+    (detail ? `<div class="detail">${String(detail).replace(/</g,'&lt;')}</div>` : '')
+  results.appendChild(div)
+  return ok
+}
+
+$('run').addEventListener('click', async () => {
+  results.innerHTML = ''
+  $('summary').textContent = ''
+  $('run').disabled = true
+
+  const url = $('url').value.trim()
+  const key = $('key').value.trim()
+  const email = $('email').value.trim()
+  const password = $('password').value
+
+  try {
+    localStorage.setItem('smoke_url', url)
+    localStorage.setItem('smoke_key', key)
+    localStorage.setItem('smoke_email', email)
+  } catch {}
+
+  let passed = 0, failed = 0
+  const tally = ok => { if (ok === true) passed++; else if (ok === false) failed++ }
+
+  // 1 — config present
+  const haveConfig = Boolean(url && key)
+  tally(report(1, 'Configuration present',
+    haveConfig,
+    'The Supabase URL and publishable key must both be set. In production these come from environment variables set in the Vercel dashboard.',
+    haveConfig ? null : 'Missing URL or key. Get both from Tin, or from Supabase → Settings → API Keys.'))
+  if (!haveConfig) { $('run').disabled = false; return }
+
+  // 2 — client initializes
+  let supabase
+  try {
+    supabase = createClient(url, key)
+    tally(report(2, 'Supabase client initializes', true,
+      'The client library loaded and accepted the URL and key format.'))
+  } catch (e) {
+    tally(report(2, 'Supabase client initializes', false,
+      'The client could not be created — usually a malformed URL or key.', e.message))
+    $('run').disabled = false; return
+  }
+
+  // 3 — anonymous read must be BLOCKED
+  {
+    const { data, error } = await supabase.from('menu_items').select('menu_item_identifier').limit(5)
+    const blocked = Boolean(error) || !data || data.length === 0
+    tally(report(3, 'Anonymous read of menu_items is BLOCKED', blocked,
+      'Before logging in, a client must see nothing. THIS CHECK PASSES WHEN ACCESS IS DENIED — rows here would mean our data is readable by anyone with the publishable key, which is public.',
+      blocked ? (error ? 'Denied: ' + error.message : 'Returned 0 rows — RLS is doing its job.')
+              : `Returned ${data.length} rows without logging in. Row Level Security is not protecting menu_items. Tell Tin before anyone builds on this.`))
+  }
+
+  // 4 — login
+  let session = null
+  {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    session = data?.session ?? null
+    tally(report(4, 'Login as the test barista succeeds', Boolean(session),
+      'Supabase Auth must accept the seeded test account. If "Confirm email" is on in the dashboard, unconfirmed accounts cannot log in.',
+      session ? 'Signed in as ' + (data.user?.email ?? email) + '\nauth.uid() = ' + (data.user?.id ?? '?')
+              : 'Error: ' + (error?.message ?? 'no session returned')))
+  }
+
+  // 5 — authenticated read must WORK
+  if (session) {
+    const { data, error } = await supabase.from('menu_items').select('menu_item_name').limit(50)
+    const ok = !error && Array.isArray(data) && data.length > 0
+    tally(report(5, 'Signed-in barista CAN read menu_items', ok,
+      'With a session, the SELECT policy should allow reading the menu.',
+      ok ? `Returned ${data.length} items, e.g. ${data.slice(0,3).map(r=>r.menu_item_name).join(', ')}`
+         : (error ? 'Error: ' + error.message
+                  : 'Returned 0 rows and no error. Two likely causes: the SELECT policy for menu_items is missing (ask Tin), or seed data was never loaded (ask Ryan). Empty-with-no-error is what a missing policy looks like.')))
+  } else {
+    report(5, 'Signed-in barista CAN read menu_items', null, 'Skipped — login failed.')
+  }
+
+  // 6 — role separation
+  if (session) {
+    const { data, error } = await supabase.from('staff_accounts').select('staff_account_identifier').limit(5)
+    const blocked = Boolean(error) || !data || data.length === 0
+    tally(report(6, 'Barista CANNOT read staff_accounts', blocked,
+      'Staff accounts are admin-only. A barista who can read this table has a path toward escalating their own role. THIS CHECK PASSES WHEN ACCESS IS DENIED.',
+      blocked ? (error ? 'Denied: ' + error.message : 'Returned 0 rows — correct.')
+              : `Returned ${data.length} rows as a Barista. Role separation is broken — this is the failure the Sprint 3 policy test suite exists to prevent.`))
+  } else {
+    report(6, 'Barista CANNOT read staff_accounts', null, 'Skipped — login failed.')
+  }
+
+  // 7 — logout ends access
+  if (session) {
+    const { error: outErr } = await supabase.auth.signOut()
+    const { data } = await supabase.from('menu_items').select('menu_item_identifier').limit(1)
+    const ok = !outErr && (!data || data.length === 0)
+    tally(report(7, 'Logout ends the session and access', ok,
+      'After signing out, the same read must be denied again. This is what Session Timeout (POS-4) and Logout (POS-13) rely on.',
+      ok ? 'Signed out; follow-up read returned nothing.'
+         : (outErr ? 'Sign-out error: ' + outErr.message
+                   : 'Still able to read data after logout — the session was not cleared.')))
+  } else {
+    report(7, 'Logout ends the session and access', null, 'Skipped — login failed.')
+  }
+
+  $('summary').textContent = failed === 0
+    ? `All checks passed (${passed}). The stack is working — start building.`
+    : `${failed} check(s) failed, ${passed} passed. Fix these before writing feature code; read each FAIL message, it says what to do.`
+  $('run').disabled = false
+})
+</script>
+</body>
+</html>
