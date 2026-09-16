@@ -194,8 +194,9 @@ removal of the separate backend server tier — explain why.
 - **SETUP.md** — for a teammate who has never used Supabase: create the project,
   install the Supabase CLI, `supabase link`, run migrations, load seed data,
   run locally, and where to get the env vars. Include an explicit warning that
-  the anon key is safe in frontend code but the service_role key bypasses all
-  RLS and must never be committed or shipped to the browser.
+  the publishable key (sb_publishable_...) is safe in frontend code but any
+  secret key (sb_secret_... / legacy service_role) bypasses all RLS and must
+  never be committed or shipped to the browser.
 - **WORKFLOW.md** — how the sub-teams work in parallel: branch naming, review
   rules, what to do when the contract changes, the rule that frontend codes
   against the contract with stubbed returns rather than waiting on backend, and
@@ -220,7 +221,7 @@ removal of the separate backend server tier — explain why.
   filled in once the stack is chosen.
 - NO deploy workflow — Vercel deploys from GitHub automatically. Document the
   Vercel setup steps in SETUP.md instead, including which env vars to set in the
-  Vercel dashboard (SUPABASE_URL and SUPABASE_ANON_KEY only).
+  Vercel dashboard (SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY only).
 - CONTRIBUTING.md: main protected; branches feature/<issue-number>-<short-
   description>; one review from the owning sub-team, two if API_CONTRACT.md is
   touched; no direct pushes to main; schema changes only via migration files.
@@ -231,9 +232,121 @@ removal of the separate backend server tier — explain why.
 - .gitignore: node_modules, .env, .env.local, Supabase local files, .DS_Store,
   IDE folders, and Python artifacts (__pycache__, .venv, *.pyc) since the
   frontend may go that way.
-- .env.example with SUPABASE_URL and SUPABASE_ANON_KEY placeholders and a
-  comment that service_role belongs nowhere in this repo.
+- .env.example with SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY placeholders and
+  a comment that secret keys (sb_secret_... / legacy service_role) belong
+  nowhere in this repo.
 - MIT LICENSE.
+
+## TESTING SETUP — the team must be able to verify the stack before writing features
+
+Scaffold everything below so that on day one, any teammate can clone the repo,
+follow one page of instructions, and prove the whole stack works end to end
+before they write a line of feature code.
+
+### 1. Connection smoke test — `frontend/src/smoke-test.html`
+
+A single self-contained page that checks the stack in order and prints a
+pass/fail line for each step. This is the first thing a new teammate opens.
+
+Checks, in this order, each printed as PASS or FAIL with the actual error text
+when it fails:
+1. Environment variables are present (SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are set and non-empty)
+2. Supabase client initializes without throwing
+3. Anonymous read of `menu_items` is BLOCKED (proves RLS is on — an unauthenticated read returning rows is a FAILURE, not a pass)
+4. Login as the seeded barista test account succeeds
+5. Authenticated read of `menu_items` returns rows (proves policies exist)
+6. Authenticated read of `staff_accounts` is BLOCKED for a Barista (proves role separation)
+7. Logout succeeds and a follow-up read is blocked again
+
+Each check prints what it means in plain language, so a failure tells the
+reader what to fix — not just "error". Example: a FAIL on check 5 prints
+"Authenticated read returned 0 rows — a SELECT policy for menu_items is
+probably missing. Ask Tin."
+
+This page is a development tool: put a comment at the top saying it must be
+deleted or blocked before the final presentation.
+
+### 2. Seeded test accounts — document in `docs/TESTING.md`
+
+The seed script and Supabase Auth must provide three known accounts the whole
+team shares:
+
+| Account | Role | Purpose |
+|---|---|---|
+| barista@test.com | Barista | Normal staff flows; must NOT reach admin data |
+| admin@test.com | Admin | Admin flows; full access |
+| barista2@test.com | Barista | Second session, for testing the live order queue across two browsers |
+
+Passwords documented in `docs/TESTING.md` (fake data, class project — say so
+explicitly in the file so nobody mistakes these for real credentials).
+
+### 3. Deterministic seed data — `backend/seed/seed.sql`
+
+Re-runnable (truncate or ON CONFLICT DO NOTHING) so anyone can reset to a known
+state in one command. Must include:
+- 15+ menu items across categories, with at least 2 marked unavailable so the
+  out-of-stock display can be tested
+- Items at prices that make tax math easy to check by hand (e.g. a $4.00 item:
+  at 10.25% tax, $4.00 → $0.41 → $4.41)
+- 3 staff accounts matching the auth users above
+- Inventory rows including at least one below its low-stock threshold
+- 2 pre-existing orders in 'Pending' status so the queue screen has content
+  before anyone can create an order
+
+Document the exact expected values in `docs/TESTING.md` so a tester knows what
+"correct" looks like without querying the database.
+
+### 4. RLS policy tests — `backend/tests/`
+
+Set up the Firebase-free equivalent: Supabase local development with the
+emulator/local stack, plus a test file per security rule that asserts what a
+Barista may and may not do. Use plain JS test files runnable with `node --test`
+(no heavy framework — this is a student project).
+
+At minimum, scaffold test cases (stubs with clear names, assertions to be filled
+in) for:
+- anonymous user can read nothing
+- barista can read menu_items
+- barista can insert an order
+- barista CANNOT update menu_items
+- barista CANNOT read staff_accounts
+- admin CAN update menu_items
+- nobody can update or delete transaction_logs
+
+Include a README in that folder with the exact command to run them.
+
+### 5. Manual test checklist — `docs/TESTING.md`
+
+A table with one row per Sprint 1 story, listing: story key, what to do, and
+what should happen. Written so a teammate can test someone else's work without
+asking them how it's supposed to behave. Cover all 13 Sprint 1 stories.
+
+Include a short "Before you say it's done" checklist:
+- [ ] Works on the live Vercel URL, not just localhost
+- [ ] Works at 768px width (tablet)
+- [ ] Tested as a Barista AND as an Admin where relevant
+- [ ] Reloading the page doesn't break it
+- [ ] The smoke test still passes after your change
+
+### 6. Troubleshooting table — in `docs/TESTING.md`
+
+| Symptom | Most likely cause |
+|---|---|
+| Query returns empty, no error | Missing RLS policy — check before debugging code |
+| "relation does not exist" | Migration not pushed, or stale local DB |
+| 401 / not authenticated | Session expired, or calling before login resolves |
+| CORS error | Opening the file directly (file://) instead of via a local server |
+| Works locally, fails on Vercel | Environment variables not set in the Vercel dashboard |
+| Totals off by a cent | Rounding at the end instead of per line item |
+
+### 7. CI runs the tests
+
+The backend CI job (`.github/workflows/ci.yml`) starts a Postgres service
+container, applies the migrations in order, loads the seed data, and runs the
+RLS tests. A pull request that breaks a security policy must fail CI, not get
+discovered at the sprint review.
+
+---
 
 ## FINISH BY
 - git init, initial commit on main.
@@ -241,3 +354,6 @@ removal of the separate backend server tier — explain why.
 - Print anything here that will cause friction for a 5-person student team
   splitting 2/3 across a semester, and what you would do differently. Be direct
   — do not just agree with me.
+- Print the exact commands a teammate runs, in order, to go from `git clone` to
+  a passing smoke test. If any step cannot work until a human does something in
+  a dashboard, say so explicitly.
