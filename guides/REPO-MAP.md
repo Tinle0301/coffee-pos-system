@@ -144,13 +144,50 @@ Reads the URL and key from environment variables. Don't hardcode anything here.
 
 ---
 
-## What is blocking whom right now
+## Timeline — four sprints, Sept 14 to Nov 8
 
-| Blocker | Blocks | Owner |
+| Sprint | Name | Dates | Use Cases | Points | Demo at the end |
+|---|---|---|---|---|---|
+| **1** | Create Order End-to-End | Sept 14 – Sept 27 | 1, 6, 2 | 58 | Barista logs in, browses the menu, builds a customized order, confirms it — saved as "Pending" |
+| **2** | Payment & Live Queue | Sept 28 – Oct 11 | 3, 4, 5, 7 | 59 | Order appears live on a second screen, gets paid, clears from the queue |
+| **3** | Admin Management | Oct 12 – Oct 25 | 8, 9, 12, 13 | 56 | Barista blocked from admin screens; admin edits menu, adjusts stock, issues a refund |
+| **4** | Reporting & Launch | Oct 26 – Nov 8 | 10, 11, 14 | 54 | Final presentation: full barista flow, full admin flow, live sales reports |
+
+Everything after Nov 8 is **buffer, not scope.** Something will slip; that is
+what the buffer absorbs. Do not plan features into it.
+
+### What each sprint builds, by folder
+
+| Sprint | `backend/` | `frontend/` |
 |---|---|---|
-| Frontend stack undecided | Bismah and Minh Tri entirely | The frontend pair |
-| `0001_schema.sql` not applied to Supabase | Nghia's functions, both frontend people's real data | Ryan |
-| `API_CONTRACT.md` signatures not published | Frontend can't even stub against the real names | Nghia |
-| Test users not created in Supabase Auth | Nobody can test login | Tin |
+| **1** | Schema, seed data, RLS baseline, `create_order`, the four core service modules | Login, menu browse, build order, totals, confirm, logout |
+| **2** | Inventory deduction, status transitions, payment policies, `checkout_order`, Realtime queue | Modify order, cancel, checkout, live queue |
+| **3** | Menu/inventory/staff/refund services, `process_refund`, the RLS test suite | Menu admin, inventory, staff accounts, refund |
+| **4** | Report aggregation queries, export services, final security review | Reports dashboard, export, transaction logs, tablet polish |
 
-Fix those four and everyone has work.
+### Every sprint, the same rhythm
+
+| When | What |
+|---|---|
+| Day 1 | Sprint Planning — confirm the goal, re-estimate anything that feels wrong, assign every story before the sprint starts |
+| Daily | 15-minute scrum, standing. Did / doing / blocked. Async in the group chat on non-class days |
+| Day 6–7 | Tin runs `git shortlog -sn` and posts commit counts, so anyone below the team average can fix it while there is still time |
+| Last day | Sprint Review — demo on the live URL, invite `scrummaster2@gmail.com`. Then Retrospective |
+| Due date | Code Contributions document submitted via Assignment — **wrong format is 0 points for the whole team** |
+
+### If a sprint runs long
+
+Cut in this order, at a sprint boundary, never the night before a review:
+
+**Export Reports → Transaction Logs screen → report charts → Refunds.**
+
+Never cut: login and role-based access, create order, payment, the live queue.
+Those four are the product.
+
+---
+
+## Full detail
+
+Sprint backlogs, story cards, points and owners live in the team's 491B Plan
+folder (`Sprint-1.md`, `Sprint-Backlogs-1-to-4.md`, `2-Month-Delivery-Plan.md`).
+This file is the map; those are the schedule.
