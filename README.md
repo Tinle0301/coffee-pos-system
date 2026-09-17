@@ -3,6 +3,8 @@
 CSULB CECS 491B senior project. A point-of-sale system for a coffee shop,
 managed entirely through GitHub.
 
+> **New to this repo? Start with [guides/REPO-MAP.md](guides/REPO-MAP.md)** — what every folder is, who owns it, and what to do in it.
+
 ## Team
 
 - Trung Tin Le (team lead)

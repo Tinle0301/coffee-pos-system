@@ -13,9 +13,9 @@ else. If you are editing a file in the other half, stop and ask.
 
 | File | Why |
 |---|---|
-| `docs/SETUP.md` | Get the project running on your machine. Start here. |
-| `guides/<YOUR SIDE>-GUIDE-Sprint1.md` | Your stories, with code patterns for each one |
-| `guides/GITHUB-WORKFLOW-Guide.md` | How we branch, commit and submit — the graded part |
+| `../docs/SETUP.md` | Get the project running on your machine. Start here. |
+| `<YOUR SIDE>-GUIDE-Sprint1.md` (in this folder) | Your stories, with code patterns for each one |
+| `GITHUB-WORKFLOW-Guide.md` (in this folder) | How we branch, commit and submit — the graded part |
 
 ---
 
@@ -99,8 +99,9 @@ Reads the URL and key from environment variables. Don't hardcode anything here.
 
 ---
 
-## `/guides` — read your own, skim the other
+## `/guides` — you are here
 
+- `REPO-MAP.md` — this file
 - `BACKEND-GUIDE-Sprint1.md` — CLI setup, then a section per person with code patterns for each story
 - `FRONTEND-GUIDE-Sprint1.md` — the stack decision, stub pattern so you don't wait on backend, code for each screen, tablet design rules
 - `GITHUB-WORKFLOW-Guide.md` — **everyone reads this.** Branching, commits, PRs, and the graded Code Contributions format
