@@ -1,16 +1,27 @@
-// supabase-client.js
-// Single Supabase client initializer for the data-access layer.
-// PLACEHOLDER — reads env vars, does not hardcode any credentials.
+// supabase-client.js — the single Supabase client for the whole app.
 //
-// Usage: import { supabase } from './supabase-client.js'
+// Imported by every module in backend/services/. The frontend never imports
+// this directly — it goes through the service modules (see REPO-MAP.md).
 //
-// SUPABASE_URL and SUPABASE_ANON_KEY are safe to expose to the browser.
-// The service_role key bypasses RLS entirely and must NEVER be used here
-// or committed to this repo. See docs/SETUP.md.
+// The library is loaded from a CDN as an ES module because we have no build
+// step (vanilla JS, FRONTEND_DECISION.md option A).
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 
-const SUPABASE_URL = process.env.SUPABASE_URL; // PLACEHOLDER — set in env
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY; // PLACEHOLDER — set in env
+if (!SUPABASE_URL || SUPABASE_PUBLISHABLE_KEY === 'PASTE_PUBLISHABLE_KEY_HERE') {
+  // Fail loudly and early: a missing key otherwise shows up as mysterious
+  // empty results much later, which is hard to tell apart from a missing
+  // RLS policy.
+  throw new Error(
+    'Supabase is not configured. Set SUPABASE_PUBLISHABLE_KEY in backend/config.js — see docs/SETUP.md.'
+  );
+}
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    persistSession: true,      // a refresh mid-shift must not log the barista out
+    autoRefreshToken: true,
+    detectSessionInUrl: false, // we use email/password, not magic links
+  },
+});
