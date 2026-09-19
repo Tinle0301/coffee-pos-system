@@ -1,0 +1,146 @@
+/* 1. Global Reset & Theme Variables */
+:root {
+  --bg-primary: #1e1e24;       /* Dark background to minimize glare */
+  --bg-surface: #2a2a35;       /* Card surfaces */
+  --text-main: #f5f5fa;        /* High-contrast crisp text */
+  --text-muted: #a0a0b0;       /* Dimmed text for unselected states */
+  --accent-color: #e07a5f;     /* Warm coffee tone accent */
+  --success-color: #4f772d;    /* Safe confirmation action color */
+  --danger-color: #bc4749;     /* Destructive action alert color */
+  --disabled-color: #404050;   /* Missing/Unavailable item mask overlay */
+  
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+/* 2. Main Layout Canvas Container */
+#app {
+  width: 100%;
+  max-width: 768px; /* Hard targets tablet resolution boundaries */
+  margin: 0 auto;
+}
+
+.screen-container {
+  background: var(--bg-surface);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+h2 {
+  font-size: 2rem;
+  margin-top: 0;
+  border-bottom: 2px solid var(--accent-color);
+  padding-bottom: 12px;
+}
+
+/* 3. Story #11: Touch-Optimized Menu Layout Grids */
+.category-section {
+  margin-bottom: 24px;
+}
+
+.category-section h3 {
+  color: var(--accent-color);
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+}
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 large grid slots per row on tablets */
+  gap: 16px;
+}
+
+/* 4. Touch Targets Rule: Universal Large Button Controls */
+button, .menu-item-btn {
+  /* Enforces 44px+ vertical thumb boundaries safely */
+  min-height: 56px; 
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+/* Primary Navigation/Action Triggers */
+button {
+  background-color: var(--accent-color);
+  color: white;
+  width: 100%;
+  margin-top: 16px;
+}
+
+button:active {
+  transform: scale(0.98); /* Tactile press feedback on touch devices */
+}
+
+/* Individual Grid Menu Item Selectors */
+.menu-item-btn {
+  background-color: #3b3b4f;
+  color: var(--text-main);
+  flex-direction: column;
+  text-align: center;
+  height: 100%;
+}
+
+.menu-item-btn:active:not(:disabled) {
+  background-color: #4d4d68;
+}
+
+/* Story #11 Requirement: Dim and Disable Unavailable Products */
+.menu-item-btn:disabled, .item-disabled {
+  background-color: var(--disabled-color) !important;
+  color: var(--text-muted) !important;
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+/* 5. Story #12 & #13 Context Layout Utilities */
+#confirm-order-btn {
+  background-color: var(--success-color);
+  font-size: 1.3rem;
+  margin-bottom: 12px;
+}
+
+#confirm-order-btn:disabled {
+  background-color: #405030 !important;
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+#global-logout-btn {
+  background-color: var(--danger-color);
+  max-width: 200px;
+  margin: 20px auto 0 auto;
+  display: flex;
+}
+
+.error {
+  background-color: rgba(188, 71, 73, 0.2);
+  border: 1px solid var(--danger-color);
+  color: #ff8080;
+  padding: 12px;
+  border-radius: 6px;
+  font-weight: bold;
+}
