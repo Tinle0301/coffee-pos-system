@@ -81,6 +81,7 @@ SUPABASE_PUBLISHABLE_KEY=<from Tin>
 ## 3. The rules — short version
 
 1. **Never push directly to `main`.** Ever. It is branch-protected.
+   Work goes: story branch → your team branch (`backend` / `frontend`) → `main`.
 2. **One branch per story.** Named after your issue number.
 3. **One pull request per story**, reviewed by a teammate before merge.
 4. **Commit often, in small pieces.** Not one giant commit at the end of the sprint.
@@ -94,10 +95,14 @@ SUPABASE_PUBLISHABLE_KEY=<from Tin>
 ### Starting a story
 
 ```bash
-git checkout main
-git pull origin main                     # ALWAYS pull first
+git checkout backend                     # or `frontend` — your team branch
+git pull origin backend                  # ALWAYS pull first
 git checkout -b feature/POS-12-confirm-order
 ```
+
+Your story branch is cut from your **team branch**, not from `main`. Open the
+pull request back into that same team branch. The team branch merges into
+`main` after testing — at least twice a sprint, not only at the end.
 
 **Branch naming:** `feature/<JIRA-KEY>-<short-description>`
 
