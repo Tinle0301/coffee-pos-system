@@ -7,5 +7,4 @@
 * menu.stub.js: Fake listMenuItems(): returning hardcoded, standing in for the real backend until it's ready.
 * orders.js: Placeholder createOrder() — currently fakes a successful order ID rather than hitting Supabase
 * auth.js: Placeholder signOut(), directly mocked by name in logout.test.js
-  
-* 
+
