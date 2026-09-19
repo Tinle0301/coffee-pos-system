@@ -1,6 +1,6 @@
 # ADR: Frontend Stack
 
-**Status:** Undecided
+**Status:** Completed (select option A.HTML/CSS/vanilla JS)
 **Decision deadline:** _TBD — fill in before Sprint 2 planning_
 
 ## Context
@@ -49,5 +49,4 @@ of the first sprint goes to tooling instead of screens.
 
 ## Decision
 
-_Empty — record the chosen option, who decided, and the date once the
-frontend sub-team picks._
+- Frontend team (Minh + Bismah) pick option A - plain HTML/CSS/JavaScript because it can deploys directly to Vercel, reuses the backend service modules, and allows both frontend developers to build and test the six required stories without spending the sprint on framework setup.
