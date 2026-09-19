@@ -15,8 +15,9 @@
 // NEVER put a secret key here (sb_secret_... or the legacy service_role).
 // Those bypass RLS entirely. This repo is public.
 
-export const SUPABASE_URL = 'https://inwlmodlxpcajgivmlbr.supabase.co';
+export const SUPABASE_URL = "https://inwlmodlxpcajgivmlbr.supabase.co";
 
 // TODO(Tin): paste the sb_publishable_... key from
 // Supabase → Settings → API Keys → "Publishable and secret API keys"
-export const SUPABASE_PUBLISHABLE_KEY = 'PASTE_PUBLISHABLE_KEY_HERE';
+export const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_woeyJbT3D_nnnH7yGwA3CA_lL96-T5l";
