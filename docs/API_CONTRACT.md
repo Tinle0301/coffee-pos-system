@@ -191,3 +191,34 @@ has to know who is signed in.
   another browser tab
 - **Input:** `callback(staff | null)`
 - **Returns:** an unsubscribe function
+
+---
+
+## Session timeout — `backend/services/sessionTimeout.js`
+
+Implemented (POS-6). The register sits on a counter in a public room; an
+unattended screen must not stay signed in. Ten minutes, from the SRS.
+
+### startSessionTimeout
+- **Screen(s):** every screen, called once after login and on any page load
+  that already has a session
+- **Input:** `{ onWarning?: (secondsLeft: number) => void, onTimeout?: () => void, idleLimitMs?: number }`
+- **Returns:** a `stop()` function
+- **Behaviour:**
+  - activity = pointerdown, keydown, touchstart, wheel, focus
+  - warns once at 60 seconds remaining, then signs out and calls `onTimeout`
+  - activity in one browser tab counts for all of them
+  - `idleLimitMs` is for tests only — production uses the SRS value
+
+### stopSessionTimeout
+- Call on manual logout so the timer stops running against a dead session.
+
+### idleTime
+- **Returns:** milliseconds since the last activity. For a countdown display.
+
+**Implementation note for reviewers:** the check is a 5-second poll comparing
+timestamps, not one long `setTimeout`. A closed laptop lid or a throttled
+background tab makes a single long timer fire late or not at all; comparing
+`Date.now()` against the last activity means a machine that slept for an hour
+signs out on the very next tick, which is what the requirement actually asks
+for.
