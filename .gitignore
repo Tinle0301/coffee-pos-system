@@ -22,5 +22,3 @@ __pycache__/
 .venv/
 *.pyc
 
-# Scaffold instructions (local only, not part of the project)
-claude-code-repo-prompt.md
