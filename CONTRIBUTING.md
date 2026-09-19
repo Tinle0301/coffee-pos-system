@@ -2,49 +2,64 @@
 
 ## Branching model
 
-Two long-lived integration branches, one per sub-team:
-
 ```
-main                 protected, deployed to the live Vercel URL
-├── backend          Tin, Ryan, Nghia integrate here
-└── frontend         Bismah, Minh Tri integrate here
+main                 protected · deploys to the live Vercel URL
+│                    backend work integrates here directly
+└── frontend         long-lived · Bismah and Minh Tri integrate here,
+                     merges into main after testing
 ```
 
-**Work in a story branch off your team branch, not directly on it:**
+**Backend (Tin, Ryan, Nghia)** — work goes straight to `main`:
 
 ```bash
-git checkout backend
-git pull origin backend
+git checkout main
+git pull origin main
 git checkout -b feature/POS-7-rls-policies
 # ...work, commit, push...
-# open a PR into `backend`
+# open a PR into `main`
 ```
+
+**Frontend (Bismah, Minh Tri)** — work goes to the `frontend` branch first:
+
+```bash
+git checkout frontend
+git pull origin frontend
+git checkout -b feature/POS-12-confirm-order
+# ...work, commit, push...
+# open a PR into `frontend`
+```
+
+The `frontend` branch merges into `main` once the screens have been tested
+together.
 
 | Branch | Merges into | Reviewed by |
 |---|---|---|
-| `feature/POS-7-...` | your team branch | one teammate on your side |
-| `backend` / `frontend` | `main` | one person from each side |
+| `feature/POS-7-...` (backend) | `main` | one backend teammate |
+| `feature/POS-12-...` (frontend) | `frontend` | the other frontend teammate |
+| `frontend` | `main` | one person from each side |
 
-`main` is protected: no direct pushes, ever.
+`main` stays protected — no direct pushes from anyone, including backend. A
+short-lived story branch and a one-person review is the cost, and it is what
+keeps a broken commit from taking down the live URL that everyone demos from.
 
-## Merging to main
+## Keeping the frontend branch current
 
-The two team branches merge into `main` after the work has been tested.
-
-**Do this at least twice per sprint, not only at the end.** Two branches that
-sit apart for two weeks diverge, and the merge that follows is where student
-projects lose a weekend. Merge `main` back down into your team branch every
-couple of days so the gap never gets big:
+Backend lands on `main` continuously, so the `frontend` branch goes stale
+fast. Pull `main` down into it **every couple of days**:
 
 ```bash
-git checkout backend
-git pull origin main        # take everyone else's work
-# fix any conflicts here, in your branch, not in the PR
+git checkout frontend
+git pull origin main        # take the backend's latest
+# resolve conflicts here, in the branch, not in a PR
+git push origin frontend
 ```
 
-Also: **nothing reaches the live URL until it's on `main`.** Vercel deploys
-`main`. Use the preview URL Vercel generates for each pull request when you
-need to show work that hasn't merged yet.
+Merge `frontend` into `main` **at least twice per sprint**, not only at the
+end. Two weeks of divergence is where student projects lose a weekend.
+
+**Nothing reaches the live URL until it is on `main`.** Vercel deploys `main`
+only. Vercel generates a preview URL for each pull request — use that to show
+frontend work that has not merged yet.
 
 ## Branch naming
 
@@ -62,19 +77,18 @@ Every commit starts with the Jira key:
 POS-7: Enable RLS on all 11 tables
 ```
 
-This is required, not a nicety. The graded per-sprint Code Contributions
-report maps committed files to Jira tasks, and an untagged commit can't be
-counted for anyone.
+Required, not a nicety. The graded per-sprint Code Contributions report maps
+committed files to Jira tasks, and an untagged commit cannot be counted for
+anyone.
 
 Commit your own work — the commit author is the only record of who did what,
 and contributions are graded per person.
 
 ## Reviews
 
-- One review from your own sub-team for a story branch merging into
-  `backend` or `frontend`.
-- Two reviews, one from each side, for `backend` → `main`, `frontend` → `main`,
-  or any change touching `docs/API_CONTRACT.md`.
+- One review from your own sub-team for a story branch.
+- Two reviews, one from each side, for `frontend` → `main` or any change
+  touching `docs/API_CONTRACT.md`.
 
 ## Schema changes
 
@@ -90,5 +104,4 @@ This repo is public, and git history keeps a secret even after you delete it.
 If you push one by accident, tell Tin immediately — the key must be rotated,
 not just removed.
 
-See [docs/WORKFLOW.md](docs/WORKFLOW.md) for the full process, including what
-to do when the API contract changes.
+See [docs/WORKFLOW.md](docs/WORKFLOW.md) for the full process.
