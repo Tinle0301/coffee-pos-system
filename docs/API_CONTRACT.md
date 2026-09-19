@@ -16,6 +16,32 @@ which screen calls it.
 
 ---
 
+## Return shape — every operation, no exceptions
+
+Every function in `backend/services/` returns:
+
+```js
+{ data: <result> | null, error: { code: string, message: string } | null }
+```
+
+It never throws and never returns a bare value. The frontend checks `error`
+first, every time:
+
+```js
+const { data, error } = await login(email, password)
+if (error) { show(error.message); return }
+```
+
+- `code` is stable and safe to branch on in code (`INVALID_CREDENTIALS`)
+- `message` is safe to show a barista as-is — it never reveals whether an
+  account exists, or leaks a raw database error
+
+"Nothing found" is **not** an error. `session()` with nobody signed in returns
+`{ data: null, error: null }`, because that is a normal answer to a normal
+question.
+
+---
+
 ## Operation format
 
 ```
@@ -112,3 +138,56 @@ format above. Placeholder list from `backend/services/`:
 - login, logout, session (`auth.js`)
 - createStaffAccount, updateStaffAccount, deactivateStaffAccount,
   listStaffAccounts (`staff.js`)
+
+---
+
+## Authentication — `backend/services/auth.js`
+
+Implemented (POS-5). Used by the Login screen (POS-10) and every screen that
+has to know who is signed in.
+
+### login
+- **Screen(s):** Login
+- **Input:**
+  - email: `string`
+  - password: `string`
+- **Returns:**
+  ```json
+  {
+    "staffAccountIdentifier": "uuid",
+    "staffFullName": "Test Barista",
+    "staffRoleType": "Barista",
+    "staffEmailAddress": "barista@test.com"
+  }
+  ```
+- **Errors:**
+  - missing email or password -> `INVALID_CREDENTIALS: Enter your email and password.`
+  - wrong email OR wrong password -> `INVALID_CREDENTIALS: Incorrect email or password.` (deliberately the same for both — anything more specific tells an attacker which emails are real)
+  - signed in but no matching `staff_accounts` row -> `NO_STAFF_ACCOUNT`
+  - staff account deactivated -> `ACCOUNT_DEACTIVATED` (the session is ended again automatically)
+
+### logout
+- **Screen(s):** every screen (logout control), and the inactivity timer
+- **Input:** none
+- **Returns:** `null`
+- **Errors:** `LOGOUT_FAILED: Could not sign out. Try again.`
+
+### session
+- **Screen(s):** every screen, on load, before rendering
+- **Input:** none
+- **Returns:** the same object as `login`, or `null` when nobody is signed in
+- **Errors:** `LOOKUP_FAILED`, `NO_STAFF_ACCOUNT`, `ACCOUNT_DEACTIVATED`
+- **Note:** nobody signed in is `{ data: null, error: null }` — not an error
+
+### isAdmin
+- **Screen(s):** navigation, to decide whether to draw admin links
+- **Returns:** `boolean`
+- **NOT a security control.** Authorization is enforced by the RLS policies
+  (POS-7). This only decides what the UI bothers to render — hiding a button
+  never stops a request.
+
+### onAuthChange
+- **Screen(s):** any screen that should react to signing out, including from
+  another browser tab
+- **Input:** `callback(staff | null)`
+- **Returns:** an unsubscribe function
