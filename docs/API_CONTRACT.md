@@ -191,3 +191,26 @@ has to know who is signed in.
   another browser tab
 - **Input:** `callback(staff | null)`
 - **Returns:** an unsubscribe function
+
+---
+
+## Session timeout — `backend/services/sessionTimeout.js`
+
+Implemented (POS-6). Ten minutes, from the SRS.
+
+### startSessionTimeout
+- **Screen(s):** call once after login, and on any page load that already has a session
+- **Input:**
+  - callback: `() => void` — runs after the session has been ended (usually a redirect to login)
+  - idleLimitMs: `number` — optional, tests only
+- **Returns:** nothing
+- **Activity counted:** pointerdown, keydown, touchstart, wheel
+
+### stopSessionTimeout
+- Call on manual logout, so the timer stops running against a dead session.
+
+**Note for reviewers:** the check is a 5-second poll comparing timestamps, not
+one long `setTimeout`. A closed laptop lid or a throttled background tab makes
+a single long timer fire late or not at all — which is exactly the case this
+feature exists to cover. Comparing `Date.now()` against the last activity means
+a machine that slept past the limit signs out on the very next tick.
