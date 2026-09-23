@@ -1,32 +1,25 @@
 # Data Model
 
-The 11 tables from the 491A Class Diagram, their columns, the
-camelCase (491A) -> snake_case (Postgres) mapping, relationships, and one
-example row per table. Schema source: `backend/migrations/0001_schema.sql`.
+The 491A data model as implemented in 491B. The original 'User' concept
+is implemented by Supabase Auth ('auth.users') rather than having a
+duplicate public 'users' table. The remaining application tables use
+camelCase (491A) -> snake_case (Postgres) mappings below.
+Schema source: `backend/migrations/0001_schema.sql`.
 
 ---
 
-## 1. users
+## 1. Users - Supabase Auth
 
-| 491A (camelCase)     | Postgres (snake_case)       |
-|-----------------------|------------------------------|
-| userIdentifier (PK)   | user_identifier              |
-| usernameCredential    | username_credential          |
-| encryptedPasswordHash | encrypted_password_hash      |
-| userEmailAddress      | user_email_address           |
-| userRoleType          | user_role_type               |
-| accountCreationTimestamp | account_creation_timestamp |
-| accountActiveStatus   | account_active_status        |
+The 491A `User` concept is implemented by Supabase Auth (`auth.users`)
+instead of a separate `public.users` table.
 
-Example row:
-```
-user_identifier: 00000000-0000-0000-0000-0000000000a1
-username_credential: jsmith
-user_email_address: jsmith@example.com
-user_role_type: Admin
-account_creation_timestamp: 2026-01-01T00:00:00Z
-account_active_status: true
-```
+Authentication uses email/password through Supabase Auth. Password storage
+and hashing are managed by Supabase, so `encryptedPasswordHash` is not stored
+in the application schema. The original `usernameCredential` field was
+dropped because the 491B implementation authenticates staff by email/password.
+
+Application-specific staff information such as full name, role, email, and
+active status is stored in `staff_accounts`.
 
 ## 2. staff_accounts
 
@@ -104,7 +97,7 @@ Example row:
 ```
 payment_transaction_identifier: 30000000-0000-0000-0000-0000000000d1
 associated_order_identifier: 10000000-0000-0000-0000-0000000000b1
-payment_method_type: Card
+payment_method_type: Credit/Debit
 payment_amount_value: 7.90
 payment_completion_status: Completed
 ```
@@ -135,7 +128,7 @@ refund_type_category: Full
 | associatedOrderIdentifier (FK -> orders)       | associated_order_identifier      |
 | transactionTypeCategory                          | transaction_type_category         |
 | transactionTimestamp                              | transaction_timestamp             |
-| performedByUserIdentifier (FK -> users)            | performed_by_user_identifier    |
+| performedByStaffIdentifier (FK -> staff_accounts)            | performed_by_staff_identifier    |
 
 Immutable — no client update/delete policy (see
 `backend/migrations/0002_rls_policies.sql`).
@@ -145,7 +138,7 @@ Example row:
 transaction_log_identifier: 50000000-0000-0000-0000-0000000000f1
 associated_order_identifier: 10000000-0000-0000-0000-0000000000b1
 transaction_type_category: order_created
-performed_by_user_identifier: 00000000-0000-0000-0000-0000000000a1
+performed_by_staff_identifier: 00000000-0000-0000-0000-0000000000a1
 ```
 
 ## 8. menu_items
@@ -220,7 +213,7 @@ staff_accounts 1───* orders 1───* order_items *───1 menu_items
                         │
                         ├──1───* queue_entries
                         │
-                        └──1───* transaction_logs *───1 users
+                        └──1───* transaction_logs *───1 staff_accounts
 
 inventory_items — decremented by checkout_order(), not FK-linked to
 order_items (ingredient-to-menu-item mapping is a services-layer concern).

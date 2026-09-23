@@ -7,7 +7,7 @@
  * @typedef {Object} Payment
  * @property {string} paymentTransactionIdentifier
  * @property {string} associatedOrderIdentifier
- * @property {string} paymentMethodType
+ * @property {'Cash'|'Credit/Debit'|'Mobile Pay'} paymentMethodType
  * @property {number} paymentAmountValue
  * @property {string} paymentCompletionStatus
  * @property {string} paymentProcessingTimestamp

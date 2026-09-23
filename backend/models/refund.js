@@ -7,7 +7,7 @@
  * @property {string} refundTransactionIdentifier
  * @property {string} associatedPaymentIdentifier
  * @property {number} refundAmountValue
- * @property {string} refundTypeCategory
+ * @property {'Full'|'Partial'} refundTypeCategory
  * @property {string} refundProcessingTimestamp
  */
 
