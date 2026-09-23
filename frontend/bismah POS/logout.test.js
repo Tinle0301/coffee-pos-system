@@ -1,7 +1,7 @@
 // src/logout.test.js
 import { describe, it, expect, vi } from 'vitest';
 import { logoutComponent } from './logout.js';
-import * as auth from './auth.js';
+import * as auth from '../../backend/services/auth.js';
 
 describe('logoutComponent', () => {
   it('renders a button labeled Log out', () => {
@@ -12,7 +12,7 @@ describe('logoutComponent', () => {
   });
 
   it('calls the auth logout service and then onLoggedOut', async () => {
-    const logoutSpy = vi.spyOn(auth, 'logout').mockResolvedValueOnce(undefined);
+    const logoutSpy = vi.spyOn(auth, 'logout').mockResolvedValueOnce({ data: null, error: null });
     const onLoggedOut = vi.fn();
     const button = logoutComponent({ onLoggedOut });
 
@@ -23,8 +23,11 @@ describe('logoutComponent', () => {
     expect(onLoggedOut).toHaveBeenCalled();
   });
 
-  it('still calls onLoggedOut even if the backend logout call fails', async () => {
-    vi.spyOn(auth, 'logout').mockRejectedValueOnce(new Error('network error'));
+  it('still calls onLoggedOut even if logout() returns an error', async () => {
+    vi.spyOn(auth, 'logout').mockResolvedValueOnce({
+      data: null,
+      error: { code: 'LOGOUT_FAILED', message: 'Could not sign out. Try again.' },
+    });
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const onLoggedOut = vi.fn();
     const button = logoutComponent({ onLoggedOut });

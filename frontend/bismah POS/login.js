@@ -1,10 +1,12 @@
-// src/login.js
-import { login } from './auth.js';
+// login.js
+import { login } from '../../backend/services/auth.js';
+// Path is relative to this file living in frontend/bismah POS/.
+// If you move this file, this import path needs to move with it.
 
 /**
  * Renders the login screen into `container` and wires up its behavior.
  * @param {HTMLElement} container
- * @param {{ onLoginSuccess: (user: object) => void }} options
+ * @param {{ onLoginSuccess: (staff: object) => void }} options
  */
 export function renderLoginScreen(container, { onLoginSuccess }) {
   container.innerHTML = `
@@ -89,19 +91,21 @@ export function renderLoginScreen(container, { onLoginSuccess }) {
       return;
     }
 
-    // Button is disabled while a request is in flight, so a second
-    // submit (e.g. double-tap) before that finishes is a no-op.
-    if (submitBtn.disabled) return;
+    if (submitBtn.disabled) return; // guard against double-tap
     setSubmitting(true);
 
-    try {
-      const user = await login(email, password);
-      onLoginSuccess(user);
-    } catch (err) {
-      // Never show the raw error — same generic message regardless of
-      // whether the email or the password was wrong.
-      showError('Incorrect email or password.');
-      setSubmitting(false);
+    // Real auth.js never throws — it always returns { data, error }.
+    const { data: staff, error } = await login(email, password);
+
+    setSubmitting(false);
+
+    if (error) {
+      // error.message is already safe to show as-is (see auth.js's own
+      // comment: it never leaks whether an account exists).
+      showError(error.message);
+      return;
     }
+
+    onLoginSuccess(staff);
   });
 }

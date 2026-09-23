@@ -1,23 +1,22 @@
 // src/main.js
 //
-// The app's router/shell. This is a single-page app (see
-// structure_explain.md): one real index.html with an empty <div id="app">,
-// and navigate() swaps its contents by screen name instead of the browser
-// doing full page navigation.
-//
-// Screens are plain functions of the form (container, options) => void
-// that render into whatever container they're given — they don't know
-// about routing or auth, main.js handles both.
+// The app's router/shell. This is a single-page app: one real index.html
+// with an empty <div id="app">, and navigate() swaps its contents by
+// screen name instead of the browser doing full page navigation.
 
 import './style.css';
-import { session, resetInactivityTimeout } from './auth.js';
+import { session } from '../../backend/services/auth.js';
 import { renderLoginScreen } from './login.js';
 import { logoutComponent } from './logout.js';
 import { renderNewOrderScreen } from './new-order.js';
 // menu.js and confirm.js are still empty placeholders owned by other
 // tickets/teammates — not wired in yet. Once either exports a render
-// function, add it to renderScreenContent() below following the same
-// (container) => void pattern as renderNewOrderScreen.
+// function, add it to renderScreenContent() below.
+//
+// NOTE: the real auth.js has no resetInactivityTimeout export (its doc
+// comment says the 10-minute timeout is handled some other way, likely
+// Supabase's own session/token expiry). If POS-6 adds one later, wire it
+// back in here the same way the old stub version did.
 
 const appRoot = document.getElementById('app');
 
@@ -44,12 +43,10 @@ async function navigate(screenName) {
   }
 
   // Every screen other than login requires an authenticated session.
-  // Checking this on every navigate() call — rather than trusting
-  // whatever screen the caller asked for — is what makes it impossible
-  // to reach a protected screen without logging in first: there is no
-  // separate URL for /new-order to open directly, there's only this one
+  // Checking this on every navigate() call is what makes it impossible to
+  // reach a protected screen without logging in first — there's only one
   // page, and it always re-checks session() before showing anything.
-  const currentUser = await session();
+  const { data: currentUser } = await session();
   if (!currentUser) {
     navigate('login');
     return;
@@ -67,7 +64,7 @@ async function navigate(screenName) {
 
   const employeeLabel = document.createElement('span');
   employeeLabel.className = 'app-header-employee';
-  employeeLabel.textContent = currentUser.employeeName || '';
+  employeeLabel.textContent = currentUser.staffFullName || '';
 
   const logoutBtn = logoutComponent({
     onLoggedOut: () => {
@@ -88,14 +85,7 @@ async function navigate(screenName) {
   renderScreenContent(screenName, content);
 }
 
-// Reset the inactivity timer on user interaction. The 10-minute timeout
-// itself is a separate ticket (auto-logout on inactivity) — this just
-// wires the hook so that ticket doesn't need to touch main.js later.
-['click', 'keydown', 'touchstart'].forEach((eventName) => {
-  document.addEventListener(eventName, () => resetInactivityTimeout());
-});
-
 (async function init() {
-  const currentUser = await session();
+  const { data: currentUser } = await session();
   navigate(currentUser ? 'new-order' : 'login');
 })();

@@ -1,5 +1,5 @@
 // src/logout.js
-import { logout } from './auth.js';
+import { logout } from '../../backend/services/auth.js';
 
 /**
  * Builds a logout button wired to the real logout flow. Used in the app

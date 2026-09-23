@@ -10,36 +10,46 @@ describe('renderNewOrderScreen', () => {
     container = document.getElementById('app');
   });
 
-  it('renders menu categories from the stub data', async () => {
+  it('renders a category tab per category, defaulting to the first as active', async () => {
     renderNewOrderScreen(container);
     await new Promise((r) => setTimeout(r, 350)); // stub has a ~300ms delay
 
-    const headings = [...container.querySelectorAll('.category-section h3')].map((h) => h.textContent);
-    expect(headings).toContain('Espresso');
-    expect(headings).toContain('Bakery');
+    const tabs = [...container.querySelectorAll('.category-tab')].map((t) => t.textContent);
+    expect(tabs).toEqual(['Espresso', 'Tea', 'Bakery']);
+    expect(container.querySelector('.category-tab.active').textContent).toBe('Espresso');
   });
 
-  it('adds a non-customizable item (bakery) straight to the order', async () => {
+  it('switches the visible rows when a different tab is clicked', async () => {
     renderNewOrderScreen(container);
     await new Promise((r) => setTimeout(r, 350));
 
-    const croissantBtn = [...container.querySelectorAll('.menu-item-btn')].find((btn) =>
-      btn.textContent.includes('Croissant')
-    );
-    croissantBtn.click();
+    const bakeryTab = [...container.querySelectorAll('.category-tab')].find((t) => t.textContent === 'Bakery');
+    bakeryTab.click();
 
-    const orderList = container.querySelector('#order-list');
-    expect(orderList.textContent).toContain('Croissant');
-    expect(container.querySelector('#order-empty').hidden).toBe(true);
+    const rowNames = [...container.querySelectorAll('.menu-row-name')].map((el) => el.textContent);
+    expect(rowNames).toContain('Croissant');
+    expect(rowNames).not.toContain('Latte');
   });
 
-  it('disables unavailable items', async () => {
+  it('adds a non-customizable item straight to the order and updates totals', async () => {
     renderNewOrderScreen(container);
     await new Promise((r) => setTimeout(r, 350));
 
-    const cortadoBtn = [...container.querySelectorAll('.menu-item-btn')].find((btn) =>
-      btn.textContent.includes('Cortado')
-    );
-    expect(cortadoBtn.disabled).toBe(true);
+    container.querySelector('.category-tab.active'); // Espresso is active; switch to Bakery
+    [...container.querySelectorAll('.category-tab')].find((t) => t.textContent === 'Bakery').click();
+    [...container.querySelectorAll('.add-btn')][0].click(); // Croissant, $3.25
+
+    expect(container.querySelector('#order-list').textContent).toContain('Croissant');
+    expect(container.querySelector('#order-subtotal').textContent).toBe('$3.25');
+    expect(container.querySelector('#order-total').textContent).not.toBe('$0.00');
+  });
+
+  it('disables the Add button for unavailable items', async () => {
+    renderNewOrderScreen(container);
+    await new Promise((r) => setTimeout(r, 350));
+
+    const cortadoRow = [...container.querySelectorAll('.menu-row-name')].find((el) => el.textContent === 'Cortado')
+      .closest('tr');
+    expect(cortadoRow.querySelector('.add-btn').disabled).toBe(true);
   });
 });

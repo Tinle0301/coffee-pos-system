@@ -1,12 +1,4 @@
 // src/new-order.js
-//
-// Migrated from the standalone frontend/Neworder.js prototype into this
-// screen-function pattern. Menu browsing + customization + order list.
-// Deliberately does NOT touch menu.js/confirm.js (other tickets) — this
-// is its own screen, reusing the shared classes already defined in
-// style.css (.screen-container, .category-section, .items-grid,
-// .menu-item-btn, .item-disabled) rather than inventing new ones.
-
 import { listMenuItems } from './menu.stub.js';
 
 const SIZE_OPTIONS = [
@@ -29,9 +21,9 @@ const ADDON_OPTIONS = [
 ];
 
 const CUSTOMIZABLE_CATEGORIES = ['Espresso', 'Tea'];
+const TAX_RATE = 0.1025; // see frontend/README.md "Things that will bite you"
 
-// Round at each step, not at the end — see frontend/README.md "Things
-// that will bite you".
+// Round at each step, not at the end.
 function round2(amount) {
   return Math.round(amount * 100) / 100;
 }
@@ -48,13 +40,25 @@ export function renderNewOrderScreen(container) {
   container.innerHTML = `
     <div class="new-order-layout">
       <section class="screen-container menu-panel" aria-label="Menu">
-        <h2>Menu</h2>
-        <div id="menu-sections"></div>
+        <h2>New Order</h2>
+        <div id="category-tabs" class="category-tabs" role="tablist"></div>
+        <table class="menu-table">
+          <thead>
+            <tr><th>Item</th><th>Price</th><th></th></tr>
+          </thead>
+          <tbody id="menu-rows"></tbody>
+        </table>
       </section>
+
       <aside class="screen-container order-panel" aria-label="Current order">
         <h2>Order</h2>
         <ul id="order-list" class="order-list"></ul>
         <p id="order-empty" class="order-empty">No items added yet.</p>
+        <div class="order-totals">
+          <div class="order-totals-row"><span>Subtotal</span><span id="order-subtotal">$0.00</span></div>
+          <div class="order-totals-row"><span>Tax</span><span id="order-tax">$0.00</span></div>
+          <div class="order-totals-row total"><span>Total</span><span id="order-total">$0.00</span></div>
+        </div>
       </aside>
     </div>
 
@@ -81,13 +85,19 @@ export function renderNewOrderScreen(container) {
     </div>
   `;
 
+  let allItems = [];
+  let activeCategory = null;
   let order = [];
   let activeItem = null;
   let nextLineId = 1;
 
-  const menuSections = container.querySelector('#menu-sections');
+  const categoryTabs = container.querySelector('#category-tabs');
+  const menuRows = container.querySelector('#menu-rows');
   const orderList = container.querySelector('#order-list');
   const orderEmpty = container.querySelector('#order-empty');
+  const subtotalEl = container.querySelector('#order-subtotal');
+  const taxEl = container.querySelector('#order-tax');
+  const totalEl = container.querySelector('#order-total');
   const modal = container.querySelector('#customize-modal');
   const modalTitle = container.querySelector('#customize-title');
   const sizeOptionsEl = container.querySelector('#size-options');
@@ -96,56 +106,60 @@ export function renderNewOrderScreen(container) {
   const modalCancel = container.querySelector('#modal-cancel');
   const modalAdd = container.querySelector('#modal-add');
 
-  function renderMenu(menuItems) {
-    const categories = [...new Set(menuItems.map((item) => item.menu_item_category_type))];
-    menuSections.innerHTML = '';
-
-    for (const category of categories) {
-      const section = document.createElement('section');
-      section.className = 'category-section';
-
-      const heading = document.createElement('h3');
-      heading.textContent = category;
-      section.appendChild(heading);
-
-      const grid = document.createElement('div');
-      grid.className = 'items-grid';
-
-      for (const item of menuItems.filter((i) => i.menu_item_category_type === category)) {
-        grid.appendChild(renderMenuItemButton(item));
-      }
-
-      section.appendChild(grid);
-      menuSections.appendChild(section);
-    }
+  function renderTabs(categories) {
+    categoryTabs.innerHTML = '';
+    categories.forEach((category) => {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'category-tab' + (category === activeCategory ? ' active' : '');
+      tab.textContent = category;
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-selected', String(category === activeCategory));
+      tab.addEventListener('click', () => {
+        activeCategory = category;
+        renderTabs(categories);
+        renderRows();
+      });
+      categoryTabs.appendChild(tab);
+    });
   }
 
-  function renderMenuItemButton(item) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'menu-item-btn';
-    btn.disabled = !item.menu_item_availability_status;
-    if (!item.menu_item_availability_status) btn.classList.add('item-disabled');
+  function renderRows() {
+    menuRows.innerHTML = '';
+    const itemsInCategory = allItems.filter((i) => i.menu_item_category_type === activeCategory);
 
-    const name = document.createElement('span');
-    name.textContent = item.menu_item_name;
-    const price = document.createElement('span');
-    price.textContent = item.menu_item_availability_status
-      ? formatPrice(item.menu_item_price_amount)
-      : 'Unavailable';
+    for (const item of itemsInCategory) {
+      const tr = document.createElement('tr');
+      if (!item.menu_item_availability_status) tr.classList.add('menu-row-unavailable');
 
-    btn.append(name, price);
+      const nameTd = document.createElement('td');
+      nameTd.className = 'menu-row-name';
+      nameTd.textContent = item.menu_item_name;
 
-    btn.addEventListener('click', () => {
-      if (!item.menu_item_availability_status) return;
-      if (CUSTOMIZABLE_CATEGORIES.includes(item.menu_item_category_type)) {
-        openCustomizeModal(item);
-      } else {
-        addLineToOrder({ name: item.menu_item_name, detail: '', price: round2(item.menu_item_price_amount) });
-      }
-    });
+      const priceTd = document.createElement('td');
+      priceTd.className = 'menu-row-price';
+      priceTd.textContent = item.menu_item_availability_status
+        ? formatPrice(item.menu_item_price_amount)
+        : 'Unavailable';
 
-    return btn;
+      const actionTd = document.createElement('td');
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'add-btn';
+      addBtn.textContent = 'Add';
+      addBtn.disabled = !item.menu_item_availability_status;
+      addBtn.addEventListener('click', () => {
+        if (CUSTOMIZABLE_CATEGORIES.includes(item.menu_item_category_type)) {
+          openCustomizeModal(item);
+        } else {
+          addLineToOrder({ name: item.menu_item_name, detail: '', price: round2(item.menu_item_price_amount) });
+        }
+      });
+      actionTd.appendChild(addBtn);
+
+      tr.append(nameTd, priceTd, actionTd);
+      menuRows.appendChild(tr);
+    }
   }
 
   function openCustomizeModal(item) {
@@ -253,14 +267,27 @@ export function renderNewOrderScreen(container) {
       li.append(info, price, removeBtn);
       orderList.appendChild(li);
     }
+
+    const subtotal = round2(order.reduce((sum, line) => sum + line.price, 0));
+    const tax = round2(subtotal * TAX_RATE);
+    const total = round2(subtotal + tax);
+
+    subtotalEl.textContent = formatPrice(subtotal);
+    taxEl.textContent = formatPrice(tax);
+    totalEl.textContent = formatPrice(total);
   }
 
   (async function init() {
     const { data, error } = await listMenuItems();
     if (error) {
-      menuSections.innerHTML = '<p class="error">Couldn\u2019t load the menu. Try refreshing.</p>';
+      menuRows.innerHTML = '<tr><td colspan="3" class="error">Couldn\u2019t load the menu. Try refreshing.</td></tr>';
       return;
     }
-    renderMenu(data);
+    allItems = data;
+    const categories = [...new Set(allItems.map((item) => item.menu_item_category_type))];
+    activeCategory = categories[0];
+    renderTabs(categories);
+    renderRows();
+    renderOrder();
   })();
 }

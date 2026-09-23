@@ -1,7 +1,7 @@
 // src/login.test.js
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderLoginScreen } from './login.js';
-import * as auth from './auth.js';
+import * as auth from '../../backend/services/auth.js';
 
 function getEls() {
   return {
@@ -35,8 +35,11 @@ describe('renderLoginScreen', () => {
     expect(onLoginSuccess).not.toHaveBeenCalled();
   });
 
-  it('shows a generic error on invalid credentials, never the raw message', async () => {
-    vi.spyOn(auth, 'login').mockRejectedValueOnce(new Error('Invalid credentials'));
+  it('shows the error message from auth.js on invalid credentials', async () => {
+    vi.spyOn(auth, 'login').mockResolvedValueOnce({
+      data: null,
+      error: { code: 'INVALID_CREDENTIALS', message: 'Incorrect email or password.' },
+    });
     const { form, emailInput, passwordInput, errorBox } = getEls();
 
     emailInput.value = 'wrong@demo.com';
@@ -49,9 +52,14 @@ describe('renderLoginScreen', () => {
     expect(errorBox.textContent).toBe('Incorrect email or password.');
   });
 
-  it('calls onLoginSuccess with the user on valid credentials', async () => {
-    const fakeUser = { userIdentifier: '1', userRoleType: 'barista', employeeName: 'Alex Rivera' };
-    vi.spyOn(auth, 'login').mockResolvedValueOnce(fakeUser);
+  it('calls onLoginSuccess with the staff record on success', async () => {
+    const staff = {
+      staffAccountIdentifier: '1',
+      staffFullName: 'Alex Rivera',
+      staffRoleType: 'Barista',
+      staffEmailAddress: 'barista@demo.com',
+    };
+    vi.spyOn(auth, 'login').mockResolvedValueOnce({ data: staff, error: null });
     const { form, emailInput, passwordInput } = getEls();
 
     emailInput.value = 'barista@demo.com';
@@ -60,7 +68,7 @@ describe('renderLoginScreen', () => {
     await new Promise((r) => setTimeout(r, 0));
     await new Promise((r) => setTimeout(r, 0));
 
-    expect(onLoginSuccess).toHaveBeenCalledWith(fakeUser);
+    expect(onLoginSuccess).toHaveBeenCalledWith(staff);
   });
 
   it('disables the submit button and shows a loading label while submitting', async () => {
@@ -80,7 +88,7 @@ describe('renderLoginScreen', () => {
     expect(submitBtn.disabled).toBe(true);
     expect(submitLabel.textContent).toBe('Logging in\u2026');
 
-    resolveLogin({ userIdentifier: '1', userRoleType: 'barista', employeeName: 'Alex Rivera' });
+    resolveLogin({ data: { staffFullName: 'Alex Rivera' }, error: null });
     await new Promise((r) => setTimeout(r, 0));
   });
 
