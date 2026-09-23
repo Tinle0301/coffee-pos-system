@@ -102,12 +102,8 @@ begin
   insert into queue_entries (associated_order_identifier, queue_entry_status_type)
   values (v_order_id, 'Pending');
 
-  -- transaction_logs.performed_by_user_identifier FKs to users, but callers
-  -- only carry a staff_accounts id here. Same simplification 0002_rls_policies.sql
-  -- already documents for auth.uid() <-> staff_account_identifier: treated as
-  -- the same id until auth is fully wired up.
   insert into transaction_logs (
-    associated_order_identifier, transaction_type_category, performed_by_user_identifier
+    associated_order_identifier, transaction_type_category, performed_by_staff_identifier
   ) values (
     v_order_id, 'order_created', staff_id
   );
