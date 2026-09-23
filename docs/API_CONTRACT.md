@@ -115,6 +115,97 @@ question.
   - order does not exist -> `ORDER_NOT_FOUND`
   - caller is not an authenticated barista/admin -> `UNAUTHORIZED`
 
+### RetrieveOrderByIdentifier
+- **Screen(s):** New Order, Modify Order, Checkout, Active Orders Queue
+- **Backend module:** `backend/services/orders.js`
+- **Input:**
+  - orderId: `string` (uuid)
+- **Returns:** same shape as `CreateNewOrder`
+- **Errors:**
+  - no order with that id -> `ORDER_NOT_FOUND`
+
+### CancelExistingOrder
+- **Screen(s):** Active Orders Queue
+- **Backend module:** `backend/services/orders.js` (calls the
+  `cancel_order` database function)
+- **Input:**
+  - orderId: `string` (uuid)
+- **Returns:** `null`
+- **Errors:**
+  - order already has a completed payment, does not exist, or caller is not
+    authorized -> `CANCEL_FAILED` (the database function does not yet
+    distinguish these — see `cancel_order` in `0003_functions.sql`, still a
+    stub as of POS-8/POS-9)
+
+### UpdateOrderItemQuantity
+- **Screen(s):** Modify Order
+- **Backend module:** `backend/services/orderItems.js`
+- **Input:**
+  - orderItemId: `string` (uuid)
+  - quantity: `number`
+- **Returns:** same shape as `AddOrderItem`
+- **Errors:**
+  - `quantity <= 0` -> `INVALID_QUANTITY`
+  - no order item with that id -> `ORDER_ITEM_NOT_FOUND`
+  - parent order is not in `Pending` status -> `ORDER_NOT_MODIFIABLE`
+  - caller does not own the parent order and is not admin -> `UNAUTHORIZED`
+
+### RemoveOrderItem
+- **Screen(s):** Modify Order
+- **Backend module:** `backend/services/orderItems.js`
+- **Input:**
+  - orderItemId: `string` (uuid)
+- **Returns:** `null`
+- **Errors:**
+  - no order item with that id -> `ORDER_ITEM_NOT_FOUND`
+  - parent order is not in `Pending` status -> `ORDER_NOT_MODIFIABLE`
+  - caller does not own the parent order and is not admin -> `UNAUTHORIZED`
+
+### ViewOrderItems
+- **Screen(s):** New Order, Modify Order, Checkout
+- **Backend module:** `backend/services/orderItems.js`
+- **Input:**
+  - orderId: `string` (uuid)
+- **Returns:** `Array<>` of the same shape as `AddOrderItem` (empty array if the order has no items)
+- **Errors:** none beyond the generic `LOOKUP_FAILED`
+
+### listMenuItems
+- **Screen(s):** New Order, Menu Management
+- **Backend module:** `backend/services/menu.js`
+- **Input:** none
+- **Returns:** `Array<{ menuItemIdentifier, menuItemName, menuItemCategoryType, menuItemDescriptionText, menuItemPriceAmount, menuItemAvailabilityStatus }>`, ordered by category
+- **Errors:** none beyond the generic `LOOKUP_FAILED`
+
+### createMenuItem
+- **Screen(s):** Menu Management
+- **Backend module:** `backend/services/menu.js`
+- **Input:**
+  - item: `{ menuItemName: string, menuItemCategoryType: string, menuItemDescriptionText?: string, menuItemPriceAmount: number, menuItemAvailabilityStatus?: boolean }`
+- **Returns:** the created menu item, same shape as `listMenuItems` rows
+- **Errors:**
+  - missing name or price, or price `< 0` -> `INVALID_MENU_ITEM`
+  - caller is not admin -> `UNAUTHORIZED`
+
+### updateMenuItem
+- **Screen(s):** Menu Management
+- **Backend module:** `backend/services/menu.js`
+- **Input:**
+  - menuItemId: `string` (uuid)
+  - updates: `Partial<>` of `createMenuItem`'s item shape
+- **Returns:** the updated menu item
+- **Errors:**
+  - price `< 0` -> `INVALID_MENU_ITEM`
+  - id doesn't exist, or caller is not admin -> `MENU_ITEM_NOT_FOUND` (deliberately the same for both, same reasoning as `login`)
+
+### deleteMenuItem
+- **Screen(s):** Menu Management
+- **Backend module:** `backend/services/menu.js`
+- **Input:**
+  - menuItemId: `string` (uuid)
+- **Returns:** `null`
+- **Errors:**
+  - id doesn't exist, or caller is not admin -> `MENU_ITEM_NOT_FOUND`
+
 ---
 
 ## Remaining operations (signatures TBD as they're implemented)
@@ -122,14 +213,13 @@ question.
 Fill in an entry per operation as each screen is built, following the
 format above. Placeholder list from `backend/services/`:
 
-- ModifyExistingOrder, CancelExistingOrder, RetrieveOrderByIdentifier
-  (`orders.js`)
+- ModifyExistingOrder (`orders.js`) — not implemented yet; see the comment
+  in `orders.js` for why (item-level and status changes already have
+  homes elsewhere, order-level "changes" doesn't have settled semantics)
 - MarkOrderAsInProgress (`orderStatus.js`)
-- UpdateOrderItemQuantity, RemoveOrderItem, ViewOrderItems (`orderItems.js`)
 - processPayment, getPayment (`payments.js`)
 - processRefund (`refunds.js`)
 - listTransactionLogs (`transactions.js`)
-- listMenuItems, createMenuItem, updateMenuItem, deleteMenuItem (`menu.js`)
 - listInventoryItems, createInventoryItem, updateInventoryItem
   (`inventory.js`)
 - listActiveQueueEntries, subscribeToQueue (`queue.js`)
