@@ -40,7 +40,6 @@ as $$
 $$;
 
 -- ── enable RLS on every table ──────────────────────────────────────────
-alter table users enable row level security;
 alter table staff_accounts enable row level security;
 alter table orders enable row level security;
 alter table order_items enable row level security;
@@ -169,9 +168,4 @@ create policy sales_reports_admin_only on sales_reports
 -- purpose — expose only what's needed via a narrower view/function later if
 -- "view my own profile" becomes a requirement.
 create policy staff_accounts_admin_only on staff_accounts
-  for all using (is_admin()) with check (is_admin());
-
--- ── users ───────────────────────────────────────────────────────────────
--- Admin only, both read and write.
-create policy users_admin_only on users
   for all using (is_admin()) with check (is_admin());

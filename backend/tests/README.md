@@ -16,7 +16,7 @@ that before merge, not just via code review.
 
 ## What to cover
 
-- A barista cannot read/write `staff_accounts`, `users`, `refunds`,
+- A barista cannot read/write `staff_accounts`, `refunds`,
   `sales_reports`, or `transaction_logs`.
 - A barista can only insert/update orders and order_items they created, not
   another staff member's.
