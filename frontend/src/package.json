@@ -1,0 +1,14 @@
+{
+  "name": "coffee-pos-system",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve .",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0",
+    "vitest": "^2.1.1"
+  }
+}

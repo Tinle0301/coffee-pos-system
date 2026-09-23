@@ -1,0 +1,5 @@
+node_modules/
+# backend/config.js is intentionally NOT gitignored — the anon/publishable
+# key it holds is safe in browser code by design (RLS policies are the
+# real security boundary, not this key). Without a Vite build step, this
+# is the only way real values reach the deployed Vercel site at all.
