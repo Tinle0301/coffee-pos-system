@@ -10,7 +10,7 @@
 //   code    — stable, safe to branch on in code
 //   message — safe to show a barista; never leaks whether an account exists
 
-import { supabase } from '../supabase-client.js';
+import { supabase } from '../tests/supabase-client.js';
 
 /** @typedef {{ code: string, message: string }} ServiceError */
 
