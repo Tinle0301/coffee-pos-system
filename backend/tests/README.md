@@ -16,8 +16,9 @@ that before merge, not just via code review.
 
 ## What to cover
 
-- A barista cannot read/write `staff_accounts`, `refunds`,
-  `sales_reports`, or `transaction_logs`.
+- A barista can read only their own `staff_accounts` row (not another
+  staff member's) and cannot write to it. A barista cannot read/write
+  `refunds`, `sales_reports`, or `transaction_logs`.
 - A barista can only insert/update orders and order_items they created, not
   another staff member's.
 - No client (barista or admin) can `update` or `delete` `transaction_logs`.
