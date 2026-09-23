@@ -1,14 +1,15 @@
-import './style.css';
 import { menuScreen } from './screens/menu.js';
 import { confirmScreen } from './screens/confirm.js';
 import { logoutComponent } from './screens/logout.js';
+import { renderLoginScreen } from './login.js';
+import { session } from '../backend/services/auth.js';
 
-// Global application memory state
+// Global application memory state — staffId starts null
 const state = {
   currentOrder: [
     { menuItem: { menu_item_identifier: '1', menu_item_name: 'Latte' }, quantity: 2, lineTotal: 9.00 }
   ],
-  staffId: 'barista-mike'
+  staffId: null
 };
 
 const routes = {
@@ -40,5 +41,29 @@ export function navigate(screenName) {
   targetScreen.init(navigate, state.currentOrder, state.staffId);
 }
 
-// Boot application
-navigate('menu');
+function onLoginSuccess(user) {
+  // staff_account_identifier IS the Supabase auth user id (see auth.js's
+  // fetchStaffAccount comment) — this is what orders_insert_own's RLS
+  // policy checks against, so this has to be the real value, not a
+  // hardcoded placeholder.
+  state.staffId = user.staffAccountIdentifier;
+  navigate('menu');
+}
+
+function showLogin() {
+  renderLoginScreen(contentRoot, { onLoginSuccess });
+}
+
+// Boot: a barista who reloads mid-shift should stay signed in (per
+// auth.js's own doc comment on session()), so check for an existing
+// session before falling back to the login screen.
+async function boot() {
+  const { data: user } = await session();
+  if (user) {
+    onLoginSuccess(user);
+  } else {
+    showLogin();
+  }
+}
+
+boot();
