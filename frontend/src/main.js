@@ -1,6 +1,6 @@
-import { menuScreen } from './screens/menu.js';
-import { confirmScreen } from './screens/confirm.js';
-import { logoutComponent } from './screens/logout.js';
+import { menuScreen } from './menu.js';
+import { confirmScreen } from './confirm.js';
+import { logoutComponent } from './logout.js';
 import { renderLoginScreen } from './login.js';
 import { session } from '../backend/services/auth.js';
 
