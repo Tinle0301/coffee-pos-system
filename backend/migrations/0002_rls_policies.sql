@@ -40,7 +40,6 @@ as $$
 $$;
 
 -- ── enable RLS on every table ──────────────────────────────────────────
-alter table users enable row level security;
 alter table staff_accounts enable row level security;
 alter table orders enable row level security;
 alter table order_items enable row level security;
@@ -165,13 +164,19 @@ create policy sales_reports_admin_only on sales_reports
   for all using (is_admin()) with check (is_admin());
 
 -- ── staff_accounts ──────────────────────────────────────────────────────
--- Admin-only read/write. A staff member is not granted self-read here on
--- purpose — expose only what's needed via a narrower view/function later if
--- "view my own profile" becomes a requirement.
-create policy staff_accounts_admin_only on staff_accounts
-  for all using (is_admin()) with check (is_admin());
+-- Staff may read their own row (needed so the login flow can fetch the
+-- logged-in user's role/profile); admins may read every row. Writes stay
+-- admin-only.
+create policy staff_accounts_select_own_or_admin on staff_accounts
+  for select using (
+    is_admin() or staff_account_identifier = auth.uid()
+  );
 
--- ── users ───────────────────────────────────────────────────────────────
--- Admin only, both read and write.
-create policy users_admin_only on users
-  for all using (is_admin()) with check (is_admin());
+create policy staff_accounts_write_admin on staff_accounts
+  for insert with check (is_admin());
+
+create policy staff_accounts_update_admin on staff_accounts
+  for update using (is_admin()) with check (is_admin());
+
+create policy staff_accounts_delete_admin on staff_accounts
+  for delete using (is_admin());

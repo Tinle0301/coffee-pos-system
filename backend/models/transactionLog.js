@@ -1,7 +1,7 @@
 // transactionLog.js — shape definition + validator for `transaction_logs`
 // (maps to 491A TransactionLog). Columns: transaction_log_identifier,
 // associated_order_identifier, transaction_type_category,
-// transaction_timestamp, performed_by_user_identifier.
+// transaction_timestamp, performed_by_staff_identifier.
 // Audit records — immutable once written (see backend RLS policies).
 
 /**
@@ -10,7 +10,7 @@
  * @property {string} associatedOrderIdentifier
  * @property {string} transactionTypeCategory
  * @property {string} transactionTimestamp
- * @property {string} performedByUserIdentifier
+ * @property {string} performedByStaffIdentifier
  */
 
 /**

@@ -81,6 +81,8 @@ SUPABASE_PUBLISHABLE_KEY=<from Tin>
 ## 3. The rules — short version
 
 1. **Never push directly to `main`.** Ever. It is branch-protected.
+   Backend: story branch → PR into `main`.
+   Frontend: story branch → PR into `frontend`; `frontend` merges to `main` after testing.
 2. **One branch per story.** Named after your issue number.
 3. **One pull request per story**, reviewed by a teammate before merge.
 4. **Commit often, in small pieces.** Not one giant commit at the end of the sprint.
@@ -94,10 +96,20 @@ SUPABASE_PUBLISHABLE_KEY=<from Tin>
 ### Starting a story
 
 ```bash
+# BACKEND — cut from main, PR back into main
 git checkout main
-git pull origin main                     # ALWAYS pull first
+git pull origin main
+git checkout -b feature/POS-7-rls-policies
+
+# FRONTEND — cut from the frontend branch, PR back into frontend
+git checkout frontend
+git pull origin frontend
 git checkout -b feature/POS-12-confirm-order
 ```
+
+Frontend people: pull `main` down into `frontend` every couple of days —
+backend is landing there continuously and your branch goes stale fast. Merge
+`frontend` into `main` at least twice a sprint, not only at the end.
 
 **Branch naming:** `feature/<JIRA-KEY>-<short-description>`
 

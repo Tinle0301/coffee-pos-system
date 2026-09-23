@@ -7,16 +7,7 @@
 -- Schema changes happen ONLY through migration files committed to the repo.
 -- Nobody edits tables by hand in the Supabase dashboard.
 
--- 1. users
-create table users (
-  user_identifier uuid primary key default gen_random_uuid(),
-  username_credential text not null unique,
-  encrypted_password_hash text not null,
-  user_email_address text not null unique,
-  user_role_type text not null check (user_role_type in ('Barista', 'Admin')),
-  account_creation_timestamp timestamptz not null default now(),
-  account_active_status boolean not null default true
-);
+-- 1. User is implemented by Supabase Auth (auth.users); no public users table.
 
 -- 2. staff_accounts
 create table staff_accounts (
@@ -50,7 +41,8 @@ create table inventory_items (
 -- 3. orders
 create table orders (
   order_identifier uuid primary key default gen_random_uuid(),
-  order_status_type text not null check (order_status_type in ('Pending', 'In Progress', 'Completed', 'Cancelled')),
+  order_status_type text not null default 'Pending'
+    check (order_status_type in ('Pending', 'In Progress', 'Completed', 'Cancelled')),
   order_subtotal_amount numeric(10, 2) not null check (order_subtotal_amount >= 0),
   order_tax_amount numeric(10, 2) not null check (order_tax_amount >= 0),
   order_total_amount numeric(10, 2) not null check (order_total_amount >= 0),
@@ -77,7 +69,8 @@ create index idx_order_items_order on order_items (associated_order_identifier);
 create table payments (
   payment_transaction_identifier uuid primary key default gen_random_uuid(),
   associated_order_identifier uuid not null references orders (order_identifier),
-  payment_method_type text not null,
+  payment_method_type text not null
+    check (payment_method_type in ('Cash', 'Credit/Debit', 'Mobile Pay')),
   payment_amount_value numeric(10, 2) not null check (payment_amount_value >= 0),
   payment_completion_status text not null,
   payment_processing_timestamp timestamptz not null default now()
@@ -90,7 +83,8 @@ create table refunds (
   refund_transaction_identifier uuid primary key default gen_random_uuid(),
   associated_payment_identifier uuid not null references payments (payment_transaction_identifier),
   refund_amount_value numeric(10, 2) not null check (refund_amount_value >= 0),
-  refund_type_category text not null,
+  refund_type_category text not null
+    check (refund_type_category in ('Full', 'Partial')),
   refund_processing_timestamp timestamptz not null default now()
 );
 
@@ -100,21 +94,24 @@ create table transaction_logs (
   associated_order_identifier uuid not null references orders (order_identifier),
   transaction_type_category text not null,
   transaction_timestamp timestamptz not null default now(),
-  performed_by_user_identifier uuid not null references users (user_identifier)
+  performed_by_staff_identifier uuid not null
+    references staff_accounts (staff_account_identifier)
 );
 
 -- 10. queue_entries
 create table queue_entries (
   queue_entry_identifier uuid primary key default gen_random_uuid(),
   associated_order_identifier uuid not null references orders (order_identifier),
-  queue_entry_status_type text not null,
+  queue_entry_status_type text not null
+    check (queue_entry_status_type in ('Pending', 'In Progress')),
   queue_entry_timestamp timestamptz not null default now()
 );
 
 -- 11. sales_reports
 create table sales_reports (
   report_identifier uuid primary key default gen_random_uuid(),
-  report_generation_type text not null,
+  report_generation_type text not null
+    check (report_generation_type in ('Daily', 'Weekly', 'Monthly')),
   report_start_date date not null,
   report_end_date date not null,
   total_revenue_amount numeric(10, 2) not null check (total_revenue_amount >= 0),

@@ -6,7 +6,7 @@
  * @typedef {Object} QueueEntry
  * @property {string} queueEntryIdentifier
  * @property {string} associatedOrderIdentifier
- * @property {string} queueEntryStatusType
+ * @property {'Pending'|'In Progress'} queueEntryStatusType
  * @property {string} queueEntryTimestamp
  */
 

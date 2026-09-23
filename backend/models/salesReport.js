@@ -6,7 +6,7 @@
 /**
  * @typedef {Object} SalesReport
  * @property {string} reportIdentifier
- * @property {string} reportGenerationType
+ * @property {'Daily'|'Weekly'|'Monthly'} reportGenerationType
  * @property {string} reportStartDate
  * @property {string} reportEndDate
  * @property {number} totalRevenueAmount
