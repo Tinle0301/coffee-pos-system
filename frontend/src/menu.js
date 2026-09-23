@@ -1,7 +1,7 @@
 // TEMPORARY: using the frontend stub per the sprint guide's "don't wait for
 // backend" rule. Swap this for '../../backend/services/menu.js' the moment
 // real module (see docs/API_CONTRACT.md) merges.
-import { listMenuItems } from '../services/menu.stub.js';
+import { listMenuItems } from './menu.stub.js';
 
 export const menuScreen = {
   render() {
