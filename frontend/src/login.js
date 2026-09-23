@@ -1,5 +1,5 @@
 
-import { login } from '../backend/services/auth.js';
+import { login } from './backend/auth.js';
 
 /**
  * Renders the login screen into `container` and wires up its behavior.
