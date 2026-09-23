@@ -1,4 +1,4 @@
-import { signOut } from '../../backend/services/auth.js';
+import { logout } from '../../backend/services/auth.js';
 
 export const logoutComponent = {
   bindLogoutButton(buttonId) {
@@ -6,7 +6,10 @@ export const logoutComponent = {
     if (!button) return;
 
     button.addEventListener('click', async () => {
-      await signOut();
+      const {error} = await logout();
+      if(error){
+        console.warn('Logout reported an error, redirecting anyway:', error.message);
+      }
       // Replace removes history trace so browser back arrow fails securely
       window.location.replace('/index.html');
     });
