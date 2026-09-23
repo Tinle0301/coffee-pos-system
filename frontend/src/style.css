@@ -1,15 +1,25 @@
-/* 1. Global Reset & Theme Variables */
+/* 1. Global Reset & Theme Variables
+   Palette: porcelain white counter, espresso-brown ink, a brass/marigold
+   accent (like the metal fittings on an espresso machine, not the usual
+   AI-default terracotta), sage for confirmations (coffee-plant green).
+   Same custom-property NAMES as the old dark theme, so anything already
+   written against var(--accent-color) etc. keeps working unchanged. */
 :root {
-  --bg-primary: #1e1e24;       /* Dark background to minimize glare */
-  --bg-surface: #2a2a35;       /* Card surfaces */
-  --text-main: #f5f5fa;        /* High-contrast crisp text */
-  --text-muted: #a0a0b0;       /* Dimmed text for unselected states */
-  --accent-color: #e07a5f;     /* Warm coffee tone accent */
-  --success-color: #4f772d;    /* Safe confirmation action color */
-  --danger-color: #bc4749;     /* Destructive action alert color */
-  --disabled-color: #404050;   /* Missing/Unavailable item mask overlay */
-  
-  font-family: system-ui, -apple-system, sans-serif;
+  --bg-primary: #faf6ef;       /* porcelain counter */
+  --bg-surface: #ffffff;       /* card surfaces */
+  --bg-panel: #f3ecdf;         /* menu list panel, warmer than the cards */
+  --text-main: #2b1b12;        /* espresso brown, not flat black */
+  --text-muted: #8a7a6b;
+  --accent-color: #c08a2e;     /* brass */
+  --accent-hover: #a87423;
+  --success-color: #5c7a5e;    /* sage */
+  --danger-color: #b0463a;
+  --disabled-color: #e7dcc9;   /* also doubles as the default border color */
+
+  --font-body: system-ui, -apple-system, sans-serif;
+  --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+
+  font-family: var(--font-body);
   background-color: var(--bg-primary);
   color: var(--text-main);
   box-sizing: border-box;
@@ -28,18 +38,26 @@ body {
   min-height: 100vh;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 /* 2. Main Layout Canvas Container */
 #app {
   width: 100%;
-  max-width: 768px; /* Hard targets tablet resolution boundaries */
+  max-width: 768px;
   margin: 0 auto;
 }
 
 .screen-container {
   background: var(--bg-surface);
+  border: 1px solid var(--disabled-color);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 16px rgba(43, 27, 18, 0.06);
 }
 
 h2 {
@@ -49,7 +67,7 @@ h2 {
   padding-bottom: 12px;
 }
 
-/* 3. Story #11: Touch-Optimized Menu Layout Grids */
+/* 3. Story #11: Touch-Optimized Menu Layout */
 .category-section {
   margin-bottom: 24px;
 }
@@ -62,14 +80,13 @@ h2 {
 
 .items-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 large grid slots per row on tablets */
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
 /* 4. Touch Targets Rule: Universal Large Button Controls */
 button, .menu-item-btn {
-  /* Enforces 44px+ vertical thumb boundaries safely */
-  min-height: 56px; 
+  min-height: 56px;
   padding: 12px 20px;
   font-size: 1.1rem;
   font-weight: 600;
@@ -79,39 +96,40 @@ button, .menu-item-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  transition: background-color 0.15s ease, transform 0.08s ease;
 }
 
-/* Primary Navigation/Action Triggers */
 button {
   background-color: var(--accent-color);
-  color: white;
+  color: #ffffff;
   width: 100%;
   margin-top: 16px;
 }
 
-button:active {
-  transform: scale(0.98); /* Tactile press feedback on touch devices */
+button:hover:not(:disabled) {
+  background-color: var(--accent-hover);
 }
 
-/* Individual Grid Menu Item Selectors */
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 .menu-item-btn {
-  background-color: #3b3b4f;
+  background-color: var(--bg-panel);
   color: var(--text-main);
   flex-direction: column;
   text-align: center;
   height: 100%;
 }
 
-.menu-item-btn:active:not(:disabled) {
-  background-color: #4d4d68;
+.menu-item-btn:hover:not(:disabled) {
+  background-color: #ece2cd;
 }
 
-/* Story #11 Requirement: Dim and Disable Unavailable Products */
 .menu-item-btn:disabled, .item-disabled {
   background-color: var(--disabled-color) !important;
   color: var(--text-muted) !important;
-  opacity: 0.4;
+  opacity: 0.6;
   cursor: not-allowed;
   text-decoration: line-through;
 }
@@ -123,24 +141,441 @@ button:active {
   margin-bottom: 12px;
 }
 
+#confirm-order-btn:hover:not(:disabled) {
+  background-color: #4a6249;
+}
+
 #confirm-order-btn:disabled {
-  background-color: #405030 !important;
+  background-color: var(--disabled-color) !important;
   color: var(--text-muted);
   cursor: not-allowed;
 }
 
 #global-logout-btn {
-  background-color: var(--danger-color);
+  background-color: transparent;
+  color: var(--danger-color);
+  border: 1px solid var(--danger-color) !important;
   max-width: 200px;
   margin: 20px auto 0 auto;
   display: flex;
 }
 
+#global-logout-btn:hover:not(:disabled) {
+  background-color: rgba(176, 70, 58, 0.08);
+}
+
 .error {
-  background-color: rgba(188, 71, 73, 0.2);
+  background-color: rgba(176, 70, 58, 0.08);
   border: 1px solid var(--danger-color);
-  color: #ff8080;
+  color: #8a3226;
   padding: 12px;
   border-radius: 6px;
   font-weight: bold;
+}
+
+/* 6. Login screen (POS-10) */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  text-align: left;
+}
+
+.login-mark {
+  font-size: 2rem;
+  color: var(--accent-color);
+  margin-bottom: 8px;
+}
+
+.login-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  margin: 0 0 4px;
+}
+
+.login-subtitle {
+  color: var(--text-muted);
+  margin: 0 0 24px;
+}
+
+.field-label {
+  display: block;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+#login-form input[type="email"],
+#login-form input[type="password"],
+#login-form input[type="text"] {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--disabled-color);
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  font-size: 1rem;
+}
+
+#login-form input:focus-visible {
+  outline: 3px solid var(--accent-color);
+  outline-offset: 1px;
+}
+
+.password-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.password-row input {
+  flex: 1;
+  margin-bottom: 0 !important;
+}
+
+.btn-ghost {
+  min-height: 44px;
+  min-width: 44px;
+  width: auto !important;
+  background: transparent !important;
+  border: 1px solid var(--disabled-color) !important;
+  color: var(--text-main) !important;
+  margin-top: 0 !important;
+  padding: 0 16px !important;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--bg-panel) !important;
+}
+
+#login-submit:disabled {
+  background-color: var(--disabled-color) !important;
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* 7. App shell */
+.app-shell {
+  width: 100%;
+  max-width: 900px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0 20px;
+}
+
+.app-header-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.app-header-employee {
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+#global-logout-btn {
+  width: auto;
+  min-height: 44px;
+  padding: 0 20px;
+  margin: 0 !important;
+}
+
+/* 8. New Order screen — light "counter ticket" look */
+.new-order-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+}
+
+@media (max-width: 860px) {
+  .new-order-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Category tabs with a single sliding underline (one deliberate motion,
+   not per-card hover effects). */
+.category-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--disabled-color);
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.category-tab {
+  background: transparent;
+  color: var(--text-muted);
+  width: auto;
+  min-height: 44px;
+  padding: 8px 18px;
+  margin: 0;
+  border-radius: 8px 8px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  transform: translateY(2px);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.category-tab:hover {
+  background: transparent;
+  color: var(--text-main);
+}
+
+.category-tab.active {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+}
+
+.menu-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.menu-table th {
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0 12px 8px;
+  border-bottom: 1px solid var(--disabled-color);
+}
+
+.menu-table th:last-child,
+.menu-table td:last-child {
+  text-align: right;
+}
+
+.menu-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--bg-panel);
+}
+
+.menu-table tr:last-child td {
+  border-bottom: none;
+}
+
+.menu-row-name {
+  font-weight: 600;
+}
+
+.menu-row-price {
+  color: var(--text-muted);
+}
+
+.menu-row-unavailable .menu-row-name,
+.menu-row-unavailable .menu-row-price {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.add-btn {
+  width: auto;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 18px;
+  font-size: 0.95rem;
+}
+
+.add-btn:disabled {
+  background-color: var(--disabled-color) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+}
+
+/* Order panel styled like a printed ticket */
+.order-panel {
+  position: relative;
+}
+
+.order-panel-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.order-number {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.order-line {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--bg-panel);
+  animation: order-line-in 0.28s ease;
+}
+
+@keyframes order-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.order-line p {
+  margin: 0;
+}
+
+.order-line-detail {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 2px !important;
+}
+
+.order-line-remove {
+  width: 36px !important;
+  min-height: 36px;
+  background: transparent !important;
+  color: var(--danger-color) !important;
+  font-size: 1.2rem;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.order-line-remove:hover {
+  background: rgba(176, 70, 58, 0.08) !important;
+}
+
+.order-empty {
+  color: var(--text-muted);
+  padding: 12px 0;
+}
+
+.order-totals {
+  border-top: 1px dashed var(--disabled-color);
+  margin-top: 8px;
+  padding-top: 12px;
+}
+
+.order-totals-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  padding: 3px 0;
+  color: var(--text-muted);
+}
+
+.order-totals-row.total {
+  color: var(--text-main);
+  font-weight: 700;
+  font-size: 1.15rem;
+  padding-top: 6px;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 27, 18, 0.35);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10;
+}
+
+.modal-overlay:not([hidden]) {
+  display: flex;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modal-in 0.18s ease;
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-field {
+  border: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.modal-field legend {
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.option-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.option-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--disabled-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.option-pill:has(input:checked) {
+  border-color: var(--accent-color);
+  background-color: rgba(192, 138, 46, 0.08);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-actions button {
+  flex: 1;
 }
