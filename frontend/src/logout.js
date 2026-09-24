@@ -1,4 +1,4 @@
-import { logout } from '../../backend/services/auth.js';
+import { logout } from './backend/auth.js';
 
 export const logoutComponent = {
   bindLogoutButton(buttonId) {
@@ -10,8 +10,9 @@ export const logoutComponent = {
       if(error){
         console.warn('Logout reported an error, redirecting anyway:', error.message);
       }
-      // Replace removes history trace so browser back arrow fails securely
-      window.location.replace('/index.html');
+      // Reload the current page itself (whatever URL that is) instead of
+      // a hardcoded path — works no matter where this is served from.
+      window.location.replace(window.location.pathname);
     });
   }
 };

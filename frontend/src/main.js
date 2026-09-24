@@ -1,5 +1,6 @@
 import { menuScreen } from './menu.js';
 import { confirmScreen } from './confirm.js';
+import { newOrderScreen } from './new-order.js';
 import { logoutComponent } from './logout.js';
 import { renderLoginScreen } from './login.js';
 import { session } from './backend/auth.js';
@@ -13,22 +14,35 @@ const state = {
 };
 
 const routes = {
+  'new-order': newOrderScreen,
   menu: menuScreen,
   confirm: confirmScreen
 };
 
 const appRoot = document.querySelector('#app');
+let contentRoot;
 
-// The logout button lives in a persistent shell OUTSIDE the swappable screen
-// content, so it survives every navigate() call instead of being wiped out
-// by innerHTML replacement (and so we only ever bind its listener once).
-appRoot.innerHTML = `
-  <div id="app-content"></div>
-  <button id="global-logout-btn">Log Out</button>
-`;
-logoutComponent.bindLogoutButton('global-logout-btn');
+// The header (title, staff name, logout) only makes sense once someone is
+// actually signed in — the login screen gets a bare shell with no header.
+function renderAuthenticatedShell(staffName) {
+  appRoot.innerHTML = `
+    <div class="app-shell">
+      <header class="app-header">
+        <span class="app-header-title">Coffee POS</span>
+        <span class="app-header-employee">${staffName || ''}</span>
+        <button id="global-logout-btn">Log Out</button>
+      </header>
+      <main id="app-content"></main>
+    </div>
+  `;
+  logoutComponent.bindLogoutButton('global-logout-btn');
+  contentRoot = document.querySelector('#app-content');
+}
 
-const contentRoot = document.querySelector('#app-content');
+function renderLoginShell() {
+  appRoot.innerHTML = `<div id="app-content"></div>`;
+  contentRoot = document.querySelector('#app-content');
+}
 
 export function navigate(screenName) {
   const targetScreen = routes[screenName];
@@ -47,10 +61,12 @@ function onLoginSuccess(user) {
   // policy checks against, so this has to be the real value, not a
   // hardcoded placeholder.
   state.staffId = user.staffAccountIdentifier;
-  navigate('menu');
+  renderAuthenticatedShell(user.staffFullName);
+  navigate('new-order');
 }
 
 function showLogin() {
+  renderLoginShell();
   renderLoginScreen(contentRoot, { onLoginSuccess });
 }
 
