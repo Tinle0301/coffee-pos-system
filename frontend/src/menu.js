@@ -1,7 +1,8 @@
 // TEMPORARY: using the frontend stub per the sprint guide's "don't wait for
 // backend" rule. Swap this for '../../backend/services/menu.js' the moment
 // real module (see docs/API_CONTRACT.md) merges.
-import { listMenuItems } from './menu.stub.js';
+//import { listMenuItems } from './menu.stub.js';
+import{listMenuItems} from '../../backend/services/menu.js';
 
 export const menuScreen = {
   render() {
@@ -32,7 +33,7 @@ export const menuScreen = {
   // Story #11: group the flat item list into { [category]: item[] }
   groupByCategory(items) {
     return items.reduce((groups, item) => {
-      const category = item.menu_item_category_type;
+      const category = item.menuItemCategoryType;
       if (!groups[category]) {
         groups[category] = [];
       }
@@ -46,16 +47,16 @@ export const menuScreen = {
       .map(([category, items]) => {
         const itemsHtml = items
           .map((item) => {
-            const isAvailable = item.menu_item_availability_status;
+            const isAvailable = item.menuItemAvailabilityStatus;
             const disabledAttrs = isAvailable ? '' : 'disabled class="item-disabled"';
             const label = isAvailable
-              ? item.menu_item_name
-              : `${item.menu_item_name} (Unavailable)`;
+              ? item.menuItemName
+              : `${item.menuItemName} (Unavailable)`;
 
             return `
-              <button class="menu-item-btn" data-item-id="${item.menu_item_identifier}" ${disabledAttrs}>
+              <button class="menu-item-btn" data-item-id="${item.menuItemIdentifier}" ${disabledAttrs}>
                 <span class="item-name">${label}</span>
-                <span class="item-price">$${item.menu_item_price_amount.toFixed(2)}</span>
+                <span class="item-price">$${item.menuItemPriceAmount.toFixed(2)}</span>
               </button>
             `;
           })

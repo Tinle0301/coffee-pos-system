@@ -1,4 +1,5 @@
-import { CreateNewOrder } from './orders.stub.js';
+//import { CreateNewOrder } from './orders.stub.js';
+import {CreateNewOrder} from '../../backend/services/orders.js';
 
 export const confirmScreen = {
   render() {
@@ -19,15 +20,17 @@ export const confirmScreen = {
       confirmBtn.textContent = 'Processing...';
 
       const structuredItems = this.preparePayload(currentOrder);
+      const {data:order,error} = await CreateNewOrder(structuredItems, staffId);
 
-      try {
+      if (error) {
         const order = await CreateNewOrder(structuredItems, staffId);
-        document.getElementById('order-status-msg').textContent = `Success! Order #${order.orderIdentifier}`;
-      } catch (err) {
-        document.getElementById('order-status-msg').textContent = 'Could not save the order — try again';
+        document.getElementById('order-status-msg').textContent  = error.message;
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Submit Order to Kitchen';
+        return;
       }
+      document.getElementById('order-status-msg').textContent = 'Success! Order # {order.orderIdentifier}';
+      
     });
   },
   preparePayload(orderLines) {
