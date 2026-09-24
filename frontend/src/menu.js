@@ -1,8 +1,5 @@
-// TEMPORARY: using the frontend stub per the sprint guide's "don't wait for
-// backend" rule. Swap this for '../../backend/services/menu.js' the moment
-// real module (see docs/API_CONTRACT.md) merges.
-//import { listMenuItems } from './menu.stub.js';
-import{listMenuItems} from '../../backend/services/menu.js';
+// Real backend module — Nghia's menu.js is implemented, no longer a stub.
+import { listMenuItems } from '../../backend/services/menu.js';
 
 export const menuScreen = {
   render() {
@@ -21,7 +18,9 @@ export const menuScreen = {
     const container = document.getElementById('menu-categories');
 
     if (error) {
-      container.innerHTML = `<div class="error">Could not load the menu — try again</div>`;
+      // error.message comes from the real menu.js contract — already
+      // written to be safe to show as-is.
+      container.innerHTML = `<div class="error">${error.message}</div>`;
       return;
     }
 
@@ -31,6 +30,9 @@ export const menuScreen = {
     }
   },
   // Story #11: group the flat item list into { [category]: item[] }
+  // NOTE: field names are camelCase (menuItemCategoryType, etc.) — the
+  // real backend/services/menu.js maps snake_case DB columns to camelCase
+  // before returning them (see its toMenuItem() function).
   groupByCategory(items) {
     return items.reduce((groups, item) => {
       const category = item.menuItemCategoryType;
@@ -72,4 +74,3 @@ export const menuScreen = {
       .join('');
   }
 };
-

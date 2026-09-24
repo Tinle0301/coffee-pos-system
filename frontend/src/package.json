@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npx serve .",
+    "dev": "npx serve ../..",
     "test": "vitest"
   },
   "devDependencies": {

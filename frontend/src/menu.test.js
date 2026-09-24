@@ -1,13 +1,17 @@
 import {describe,it,expect, vi} from 'vitest';
 import {menuScreen} from './menu.js';
 
-vi.mock('../../backend/services/menu.js', () => ({listMenuItems: vi.fn()}));
+vi.mock('../../backend/services/menu.js', () => ({
+  listMenuItems: vi.fn()
+}));
 
 describe('Story #11: Browse Menu by Category', () => {
-
+  // camelCase — matches the real backend/services/menu.js contract
+  // (its toMenuItem() maps snake_case DB columns to camelCase before
+  // returning), not the raw DB column names.
   const mockItems = [
-    { menu_item_identifier: '1', menu_item_name: 'Latte', menu_item_category_type: 'Espresso', menu_item_price_amount: 4.50, menu_item_availability_status: true },
-    { menu_item_identifier: '2', menu_item_name: 'Cold Brew', menu_item_category_type: 'Brewed', menu_item_price_amount: 3.75, menu_item_availability_status: false }
+    { menuItemIdentifier: '1', menuItemName: 'Latte', menuItemCategoryType: 'Espresso', menuItemPriceAmount: 4.50, menuItemAvailabilityStatus: true },
+    { menuItemIdentifier: '2', menuItemName: 'Cold Brew', menuItemCategoryType: 'Brewed', menuItemPriceAmount: 3.75, menuItemAvailabilityStatus: false }
   ];
 
   it('should correctly group raw menu array items by their category type', () => {
