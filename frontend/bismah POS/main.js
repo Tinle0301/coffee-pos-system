@@ -1,22 +1,26 @@
 // src/main.js
 //
-// The app's router/shell. This is a single-page app: one real index.html
-// with an empty <div id="app">, and navigate() swaps its contents by
-// screen name instead of the browser doing full page navigation.
+// The app's router/shell. Single-page app: one real index.html with an
+// empty <div id="app">, and navigate() swaps its contents by screen name.
+//
+// Screens are plain functions of the form (container, options) => void
+// that render into whatever container they're given.
+//
+// NOTE ON MERGE: this file previously had two competing implementations
+// (one using this container-function pattern with a login/session guard,
+// one using render()/init() screen objects with a global state object and
+// no login check). This version keeps the container-function pattern
+// because it's the one with a working, tested login flow — auth is a core
+// requirement, not optional. menu.js and confirm.js still use the other
+// pattern and aren't wired in below; reconciling them is a team decision,
+// not something resolved unilaterally here.
 
-import './style.css';
 import { session } from '../../backend/services/auth.js';
 import { renderLoginScreen } from './login.js';
 import { logoutComponent } from './logout.js';
 import { renderNewOrderScreen } from './new-order.js';
-// menu.js and confirm.js are still empty placeholders owned by other
-// tickets/teammates — not wired in yet. Once either exports a render
-// function, add it to renderScreenContent() below.
-//
-// NOTE: the real auth.js has no resetInactivityTimeout export (its doc
-// comment says the 10-minute timeout is handled some other way, likely
-// Supabase's own session/token expiry). If POS-6 adds one later, wire it
-// back in here the same way the old stub version did.
+// menu.js, confirm.js: different pattern (render()/init() objects, global
+// state), not wired in here. See note above.
 
 const appRoot = document.getElementById('app');
 
@@ -43,9 +47,6 @@ async function navigate(screenName) {
   }
 
   // Every screen other than login requires an authenticated session.
-  // Checking this on every navigate() call is what makes it impossible to
-  // reach a protected screen without logging in first — there's only one
-  // page, and it always re-checks session() before showing anything.
   const { data: currentUser } = await session();
   if (!currentUser) {
     navigate('login');
@@ -68,8 +69,6 @@ async function navigate(screenName) {
 
   const logoutBtn = logoutComponent({
     onLoggedOut: () => {
-      // Full reload via replace(), not href: no history entry is left
-      // pointing at the authenticated shell, so Back can't restore it.
       window.location.replace(window.location.pathname);
     },
   });
