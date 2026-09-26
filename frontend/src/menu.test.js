@@ -10,7 +10,7 @@ describe('Story #11: Browse Menu by Category', () => {
   // (its toMenuItem() maps snake_case DB columns to camelCase before
   // returning), not the raw DB column names.
   const mockItems = [
-    { menuItemIdentifier: '1', menuItemName: 'Latte', menuItemCategoryType: 'Espresso', menuItemPriceAmount: 4.50, menuItemAvailabilityStatus: true },
+    { menuItemIdentifier: '1', menuItemName: 'python3 -m http.server 8000 ', menuItemCategoryType: 'Espresso', menuItemPriceAmount: 4.50, menuItemAvailabilityStatus: true },
     { menuItemIdentifier: '2', menuItemName: 'Cold Brew', menuItemCategoryType: 'Brewed', menuItemPriceAmount: 3.75, menuItemAvailabilityStatus: false }
   ];
 
