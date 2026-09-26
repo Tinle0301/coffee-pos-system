@@ -23,13 +23,18 @@ export const confirmScreen = {
       const {data:order,error} = await CreateNewOrder(structuredItems, staffId);
 
       if (error) {
-        const order = await CreateNewOrder(structuredItems, staffId);
+        // No automatic retry: a second call after a slow failure can put
+        // the same order in the kitchen twice.
         document.getElementById('order-status-msg').textContent  = error.message;
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Submit Order to Kitchen';
         return;
       }
-      document.getElementById('order-status-msg').textContent = 'Success! Order # {order.orderIdentifier}';
+      // Backticks + ${...} so the real number is shown, not the text.
+      // Works whether orders.js returns { orderIdentifier } or the id itself.
+      const orderNumber = order?.orderIdentifier ?? order;
+      document.getElementById('order-status-msg').textContent = `Success! Order #${orderNumber}`;
+      confirmBtn.textContent = 'Order sent';
       
     });
   },
@@ -53,4 +58,3 @@ export const confirmScreen = {
     return parts.length ? parts.join(', ') : 'None';
   }
 };
-
