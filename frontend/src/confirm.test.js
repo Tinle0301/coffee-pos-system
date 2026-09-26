@@ -24,4 +24,3 @@ describe('Story #12: Confirm Order API Payload Wrapper', () => {
     });
   });
 });
-
