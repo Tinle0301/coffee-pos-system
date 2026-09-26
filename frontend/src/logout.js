@@ -1,4 +1,4 @@
-import { logout } from './backend/auth.js';
+import { logout } from '../../backend/services/auth.js';
 
 export const logoutComponent = {
   bindLogoutButton(buttonId) {
@@ -10,8 +10,9 @@ export const logoutComponent = {
       if(error){
         console.warn('Logout reported an error, redirecting anyway:', error.message);
       }
-      // Reload the current page itself (whatever URL that is) instead of
-      // a hardcoded path — works no matter where this is served from.
+      // Replace removes history trace so browser back arrow fails securely
+      // Reload the app's own page (works under `npm run dev` and on Vercel);
+      // with no session left, main.js shows the login screen.
       window.location.replace(window.location.pathname);
     });
   }
