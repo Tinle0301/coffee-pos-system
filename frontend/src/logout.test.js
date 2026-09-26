@@ -5,7 +5,7 @@ import * as authService from '../../backend/services/auth.js';
 // Stub out global browser redirect layer
 const replaceMock = vi.fn();
 Object.defineProperty(window, 'location', {
-  value: { replace: replaceMock },
+  value: { replace: replaceMock, pathname: '/frontend/src/' },
   writable: true
 });
 
@@ -30,7 +30,7 @@ describe('Story #13: Safe App Session Termination', () => {
     await new Promise(process.nextTick);
 
     expect(authService.logout).toHaveBeenCalledTimes(1);
-    expect(replaceMock).toHaveBeenCalledWith('/index.html');
+    expect(replaceMock).toHaveBeenCalledWith('/frontend/src/');
   });
 
   it('should still redirect even if the backend reports a logout error', async () => {
@@ -40,6 +40,6 @@ describe('Story #13: Safe App Session Termination', () => {
     document.getElementById('test-logout').click();
     await new Promise(process.nextTick);
 
-    expect(replaceMock).toHaveBeenCalledWith('/index.html');
+    expect(replaceMock).toHaveBeenCalledWith('/frontend/src/');
   });
 });
