@@ -1,5 +1,5 @@
 //import { CreateNewOrder } from './orders.stub.js';
-import {CreateNewOrder} from '../../backend/services/orders.js';
+import {CreateNewOrder} from './backend/services/orders.js';
 
 export const confirmScreen = {
   render() {
