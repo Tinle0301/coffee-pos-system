@@ -1,5 +1,5 @@
 // Real backend module — Nghia's menu.js is implemented, no longer a stub.
-import { listMenuItems } from '../../backend/services/menu.js';
+import { listMenuItems } from './backend/services/menu.js';
 
 export const menuScreen = {
   render() {

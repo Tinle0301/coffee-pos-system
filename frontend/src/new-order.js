@@ -2,7 +2,7 @@
 // Story #9/#10: build an order — customize size/milk/add-ons, running totals.
 // Wired as its own route so it doesn't replace menuScreen's "Menu
 // Management" screen — this is the richer build-the-order experience.
-import { listMenuItems } from '../../backend/services/menu.js';
+import { listMenuItems } from './backend/services/menu.js';
 
 const SIZE_OPTIONS = [
   { id: 'small', label: 'Small', delta: 0 },
