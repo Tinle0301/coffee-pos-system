@@ -62,7 +62,7 @@ a new numbered file instead.
 - `order_items` cascades on delete from `orders`
 
 **Ryan: read this file line by line before building on it.** It was generated
-from the class diagram and it is your story (POS-1) to defend at the sprint
+from the class diagram and it is Ryan's story (POS-4) to defend at the sprint
 review. Generated SQL is a draft, not an answer.
 
 ### About `0002_rls_policies.sql` — read this even if it isn't yours
@@ -113,7 +113,7 @@ Called from JavaScript as `supabase.rpc('create_order', { items, staff_id })`.
 
 **`security definer` means the function bypasses RLS while it runs.** That is
 intentional — but it also means the function itself must check that the caller
-is allowed to do this. Nghia and Tin should review these together before POS-6
+is allowed to do this. Nghia and Tin should review these together before POS-7
 is marked done.
 
 ---
@@ -169,7 +169,7 @@ One per entity: plain JS objects plus validators. Keep them matching
 
 ---
 
-## `seed/seed.sql` — Ryan (POS-2)
+## `seed/seed.sql` — Nghia (POS-3)
 
 Currently 20 lines. Sprint 1 needs it to be a realistic, **re-runnable**
 dataset — start with `truncate ... cascade` so anyone can reset to a known
@@ -233,11 +233,11 @@ stories with code patterns are in
 
 ## Sprint 1 checklist for this folder
 
-- [ ] **POS-1** Schema applied to Supabase (Ryan) — *blocks four people, land a partial version early*
-- [ ] **POS-2** Seed data expanded and re-runnable (Ryan)
-- [ ] **POS-3** Login working end to end (Tin)
-- [ ] **POS-4** 10-minute session timeout (Tin)
-- [ ] **POS-5** RLS enabled on every table with baseline policies (Tin)
-- [ ] **POS-6** `create_order` function writing all four tables atomically (Nghia)
-- [ ] **POS-7** `auth.js`, `menu.js`, `orders.js`, `orderItems.js` implemented (Nghia)
-- [ ] Signatures published to `API_CONTRACT.md` — **day one, before implementing**
+- [x] **POS-3** Seed data expanded and re-runnable (Nghia)
+- [x] **POS-4** Schema applied to Supabase (Ryan)
+- [x] **POS-5** Login working end to end (Tin)
+- [x] **POS-6** 10-minute session timeout (Tin)
+- [x] **POS-7** RLS enabled on every table with baseline policies (Tin)
+- [x] **POS-8** `create_order` function writing all four tables atomically (Nghia)
+- [x] **POS-9** `menu.js`, `orders.js`, `orderItems.js` implemented (Nghia)
+- [x] Signatures published to `API_CONTRACT.md` — **day one, before implementing**

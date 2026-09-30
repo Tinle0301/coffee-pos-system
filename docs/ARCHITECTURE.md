@@ -31,7 +31,7 @@ responsibilities as follows:
 
 | SRS responsibility | Where it lives now |
 |---|---|
-| Business logic / validation | SQL `CHECK` constraints (`0001_schema.sql`) + plpgsql RPC functions for multi-table transactions (`0003_functions.sql`) |
+| Business logic / validation | SQL `CHECK` constraints (`0001_schema.sql`) + plpgsql RPC functions for multi-table transactions (`0003_functions.sql`; `create_order` is implemented in `0004_create_order.sql`) |
 | Authorization / RBAC | Row Level Security policies (`0002_rls_policies.sql`) — enforced by Postgres itself on every query, not by a middle tier that could be bypassed |
 | Session management | Supabase Auth |
 | Live updates (order queue) | Supabase Realtime (Postgres logical replication over websockets) |
@@ -53,7 +53,7 @@ Vercel's managed infrastructure.
 1. Barista submits the New Order screen.
 2. Frontend calls `backend/services/orders.js#CreateNewOrder(items, staffId)`.
 3. That calls the `create_order(items, staff_id)` Postgres function
-   (`0003_functions.sql`), which — in one transaction — inserts the order,
+   (`0004_create_order.sql`, which replaced the stub in `0003_functions.sql`), which — in one transaction — inserts the order,
    its order_items, a queue_entries row, and a transaction_logs row.
 4. RLS (`0002_rls_policies.sql`) checks the calling user is an
    authenticated staff member before any of it is allowed to run.

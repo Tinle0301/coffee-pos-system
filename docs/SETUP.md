@@ -42,7 +42,8 @@ supabase db push
 ```
 
 This applies everything in `backend/migrations/` in numeric order
-(`0001_schema.sql`, `0002_rls_policies.sql`, `0003_functions.sql`).
+(`0001_schema.sql`, `0002_rls_policies.sql`, `0003_functions.sql`,
+`0004_create_order.sql`). `0004` replaces the `create_order` stub from `0003`.
 
 For local development against a local Postgres instead of the hosted
 project:
@@ -66,8 +67,9 @@ psql "<your-connection-string>" -f backend/seed/seed.sql
 
 - **Backend:** nothing to run — Supabase is hosted (or `supabase start`
   for a local instance). Set env vars as below.
-- **Frontend:** see `frontend/README.md` — no framework decided yet, so no
-  local dev server exists until `docs/FRONTEND_DECISION.md` is resolved.
+- **Frontend:** plain HTML/CSS/JS in `frontend/src/` (see
+  `docs/FRONTEND_DECISION.md`). From that folder run `npm install`, then
+  `npm run dev` for a local server and `npx vitest run` for the tests.
 
 ## 7. Environment variables
 
@@ -94,6 +96,8 @@ If you ever need it (e.g. a one-off admin script run locally), keep it out
 of version control and out of any client-shipped bundle.
 
 ## 8. Vercel deployment
+
+Live site: https://coffee-pos-system-omega.vercel.app
 
 Vercel auto-deploys from GitHub on push to `main` — there is no deploy
 workflow in `.github/workflows/`. Set these in the **Vercel dashboard**

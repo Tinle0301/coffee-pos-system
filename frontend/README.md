@@ -53,8 +53,8 @@ framework config — adding them now would pick the answer by accident.
 
 | Path | State | Purpose |
 |---|---|---|
-| `src/index.html` | Placeholder | Proves the Vercel pipeline works. Replace with the real login screen (POS-8) |
-| `src/` | Empty | Screens and their logic |
+| `src/index.html` | Done | App shell loaded by every screen; `main.js` swaps screens |
+| `src/` | Built | Screens (`login`, `menu`, `new-order`, `confirm`, `logout`) and their `*.test.js` |
 | `assets/` | Empty | Images, icons, fonts |
 | `tests/` | Empty | Fill in once the stack is chosen |
 
@@ -180,13 +180,13 @@ correct.
 
 ## Sprint 1 checklist for this folder
 
-- [ ] **Stack decision recorded** in `FRONTEND_DECISION.md` — *this blocks everything else*
-- [ ] **POS-8** Login screen (Bismah)
-- [ ] **POS-9** Build the order: add items, customize size / milk / add-ons (Bismah)
-- [ ] **POS-10** Running subtotal, tax and total (Bismah)
-- [ ] **POS-11** Browse menu by category, unavailable items marked (Minh Tri)
-- [ ] **POS-12** Confirm order, show the order number (Minh Tri)
-- [ ] **POS-13** Logout (Minh Tri)
+- [x] **Stack decision recorded** in `FRONTEND_DECISION.md` (plain HTML/CSS/JS)
+- [x] **POS-10** Login / logout screens (Bismah)
+- [x] **POS-11** New order: add items, customize size / milk / add-ons (Bismah)
+- [x] **POS-12** Running subtotal, tax and total (Bismah)
+- [x] **POS-13** Browse menu by category, unavailable items marked (Minh Tri)
+- [x] **POS-14** Confirm order, show the order number (Minh Tri)
+- [x] **POS-15** Logout (Minh Tri)
 
 Your stories with code patterns for each:
 [`../guides/FRONTEND-GUIDE-Sprint1.md`](../guides/FRONTEND-GUIDE-Sprint1.md)

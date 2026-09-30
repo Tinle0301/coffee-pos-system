@@ -34,8 +34,7 @@ They meet at [docs/API_CONTRACT.md](docs/API_CONTRACT.md).
 
 ## Live URL
 
-_TBD — Vercel deployment URL placeholder, fill in once the frontend
-deploys._
+https://coffee-pos-system-omega.vercel.app — auto-deploys from `main`.
 
 ## Quick start
 
@@ -48,7 +47,7 @@ installing the CLI, running migrations, loading seed data, and env vars.
 _TBD, fill in the URL once created._ Every commit, PR, and the graded
 per-sprint Code Contributions report (see
 [docs/WORKFLOW.md](docs/WORKFLOW.md#code-contributions-reporting-sprint-grading))
-reference Jira task labels (e.g. `A-22`), not GitHub issue numbers.
+reference Jira task labels (e.g. `POS-7`), not GitHub issue numbers.
 
 GitHub Issues are still used for bug reports and lightweight discussion,
 tracked on a GitHub Projects board with columns:
