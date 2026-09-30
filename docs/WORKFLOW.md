@@ -6,7 +6,7 @@ parallel without blocking each other.
 ## Task tracking: Jira + GitHub
 
 **Jira is the system of record for sprint planning and task numbers.**
-Story points, sprint assignment, and the task label (e.g. `A-22`) all live
+Story points, sprint assignment, and the task label (e.g. `POS-7`) all live
 in Jira — not in GitHub Issues. This matters beyond planning: the
 per-sprint Code Contributions report graded in this course (see
 [Code Contributions Reporting](#code-contributions-reporting-sprint-grading)
@@ -14,23 +14,26 @@ below) requires every committed file to be traceable to a Jira task
 number, so the discipline below isn't optional.
 
 - Every commit message and PR title/description that implements a Jira
-  task **must include that task's label**, e.g.:
+  task **must start with that task's label in the form `POS-N:`**, e.g.:
   ```
-  [A-22] Add checkout screen submit handler
+  POS-14: Add confirm screen validation
   ```
 - GitHub Issues (`.github/ISSUE_TEMPLATE/`) are still used for bug reports
   and lightweight code-review discussion, but they are not the source of
   truth for sprint task numbers — if a GitHub issue corresponds to a Jira
   task, reference the Jira label in the issue body.
-- Record the team's Jira project URL in `README.md` (Project Management
-  section) once it exists.
+- The team's Jira project URL belongs in `README.md` (Project Management
+  section).
+- Only commits with a `POS-N:` tag that are on `main` count toward the
+  Code Contributions report. Forgot a tag? Add a "link" commit, e.g.
+  `POS-13: link browse-menu commits (49accfb, 9ae1911)`.
 
 ## Branch naming
 
 ```
 feature/<jira-task-label>-<short-description>
 ```
-Example: `feature/A-22-checkout-screen`.
+Example: `feature/POS-14-confirm-order`.
 
 ## Review rules
 

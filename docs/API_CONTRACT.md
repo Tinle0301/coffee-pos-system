@@ -135,7 +135,7 @@ question.
   - order already has a completed payment, does not exist, or caller is not
     authorized -> `CANCEL_FAILED` (the database function does not yet
     distinguish these — see `cancel_order` in `0003_functions.sql`, still a
-    stub as of POS-8/POS-9)
+    stub at the end of Sprint 1)
 
 ### UpdateOrderItemQuantity
 - **Screen(s):** Modify Order
@@ -208,6 +208,13 @@ question.
 
 ---
 
+## Implementation status (end of Sprint 1)
+
+Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`,
+`orders.js` (except `ModifyExistingOrder`) and `orderItems.js` (POS-9), and
+the `create_order` database function (POS-8). Everything listed below is an
+empty stub.
+
 ## Remaining operations (signatures TBD as they're implemented)
 
 Fill in an entry per operation as each screen is built, following the
@@ -225,7 +232,6 @@ format above. Placeholder list from `backend/services/`:
 - listActiveQueueEntries, subscribeToQueue (`queue.js`)
 - generateSalesReport, listSalesReports (`reports.js`)
 - exportReportAsCsv, exportReportAsPdf (`exports.js`)
-- login, logout, session (`auth.js`)
 - createStaffAccount, updateStaffAccount, deactivateStaffAccount,
   listStaffAccounts (`staff.js`)
 

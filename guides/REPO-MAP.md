@@ -26,8 +26,8 @@ directly.** All data goes through `backend/services/`.
 
 | Path | State | What to do |
 |---|---|---|
-| `src/index.html` | Placeholder | Replace with the real login screen (POS-8) |
-| `src/` | Empty | Your screens go here |
+| `src/index.html` | Done | App shell; `main.js` routes between screens |
+| `src/` | Built | Login, menu, new-order, confirm, logout + tests |
 | `assets/` | Empty | Images, icons, fonts |
 | `tests/` | Empty | Fill in once the stack is chosen |
 | `README.md` | Written | Lists all 13 screens and which use case each serves |
@@ -58,7 +58,7 @@ applied one.
 ### `services/` — Nghia (13 files)
 The public API the frontend imports, one module per 491A controller. Currently
 signatures and JSDoc, no bodies. **Sprint 1 needs `auth.js`, `menu.js`,
-`orders.js`, `orderItems.js` (POS-7).**
+`orders.js`, `orderItems.js` (POS-5, POS-9).**
 
 **Publish your function signatures to `docs/API_CONTRACT.md` on day one**,
 before implementing them. The frontend pair is blocked on the names, not the
@@ -67,8 +67,8 @@ code.
 ### `models/` — 11 files
 Shape definitions and validators, one per entity. Fill in as the schema settles.
 
-### `seed/seed.sql` — Ryan
-Sample data for development. Currently 20 lines — **needs expanding (POS-2)**:
+### `seed/seed.sql` — Nghia
+Sample data for development. Currently 20 lines — **expanded in POS-3**:
 15+ menu items with some unavailable, inventory including one below threshold,
 and a couple of pre-existing Pending orders so the queue screen isn't empty.
 Make it re-runnable so anyone can reset to a known state.
