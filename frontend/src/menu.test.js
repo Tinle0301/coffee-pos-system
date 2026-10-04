@@ -1,7 +1,7 @@
 import {describe,it,expect, vi} from 'vitest';
 import {menuScreen} from './menu.js';
 
-vi.mock('../../backend/services/menu.js', () => ({
+vi.mock('./backend/services/menu.js', () => ({
   listMenuItems: vi.fn()
 }));
 

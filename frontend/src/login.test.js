@@ -4,7 +4,7 @@ import { login } from './backend/auth.js';
 
 // Node can't load the CDN-based supabase-client.js chain, so mock auth.js
 // (the same module login.js imports).
-vi.mock('./backend/auth.js', () => ({ login: vi.fn() }));
+vi.mock('../../backend/auth.js', () => ({ login: vi.fn() }));
 
 const $ = (selector) => document.querySelector(selector);
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
