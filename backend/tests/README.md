@@ -10,9 +10,10 @@ that before merge, not just via code review.
 2. Start a local Supabase instance: `supabase start`.
 3. Apply migrations: `supabase db reset` (applies everything in
    `../migrations/` in order, then `../seed/seed.sql`).
-4. Run the test suite: *(command TBD once a test runner is chosen — e.g.
-   `pgTAP` run via `supabase test db`, or a JS suite hitting the local
-   Supabase REST API with test JWTs for a barista and an admin role)*.
+4. Run the test suite: *not written yet — the RLS suite is planned for
+   Sprint 3 (e.g. `pgTAP` via `supabase test db`, or a JS suite hitting the
+   local Supabase REST API with test JWTs for a barista and an admin).
+   Frontend unit tests already exist: `npx vitest run` in `frontend/src/`.*
 
 ## What to cover
 
