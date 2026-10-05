@@ -1,6 +1,7 @@
 import { menuScreen } from './menu.js';
 import { newOrderScreen } from './new-order.js';
 import { confirmScreen } from './confirm.js';
+import { paymentScreen } from './payment.js';
 import { logoutComponent } from './logout.js';
 import { renderLoginScreen } from './login.js';
 import { session } from './backend/auth.js';
@@ -8,13 +9,15 @@ import { session } from './backend/auth.js';
 // Global application memory state — staffId starts null
 const state = {
   currentOrder: [], // filled by the New Order screen (new-order.js)
+  lastOrder: null, // the saved order waiting for payment(set by confirm.js)
   staffId: null
 };
 
 const routes = {
   'new-order': newOrderScreen,
   menu: menuScreen,
-  confirm: confirmScreen
+  confirm: confirmScreen,
+  payment: paymentScreen
 };
 
 const appRoot = document.querySelector('#app');
@@ -38,7 +41,7 @@ export function navigate(screenName) {
   contentRoot.innerHTML = targetScreen.render(state);
 
   // 2. Hydrate action listeners & pass the specific state pieces each screen needs
-  targetScreen.init(navigate, state.currentOrder, state.staffId);
+  targetScreen.init(navigate, state.currentOrder, state.staffId, state);
 }
 
 function onLoginSuccess(user) {
