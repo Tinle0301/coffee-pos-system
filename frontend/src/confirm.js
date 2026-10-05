@@ -11,7 +11,7 @@ export const confirmScreen = {
       </div>
     `;
   },
-  init(navigate, currentOrder, staffId) {
+  init(navigate, currentOrder, staffId, appState) {
     const confirmBtn = document.getElementById('confirm-order-btn');
     
     confirmBtn.addEventListener('click', async () => {
@@ -36,6 +36,12 @@ export const confirmScreen = {
       document.getElementById('order-status-msg').textContent = `Success! Order #${orderNumber}`;
       confirmBtn.textContent = 'Order sent';
       
+      // payment story, hand the saved order to the payment screen
+      if (appState) {
+        appState.lastOrder = order;
+        navigate('payment');
+      }
+
     });
   },
   preparePayload(orderLines) {
