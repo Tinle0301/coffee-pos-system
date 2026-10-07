@@ -43,8 +43,10 @@ supabase db push
 
 This applies everything in `backend/migrations/` in numeric order
 (`0001_schema.sql`, `0002_rls_policies.sql`, `0003_functions.sql`,
-`0004_create_order.sql`, `0005_payment_security.sql`). `0004` replaces the
-`create_order` stub from `0003`; `0005` locks down payments and transaction logs.
+`0004_create_order.sql`, `0005_payment_security.sql`,
+`0006_status_role_checks.sql`). `0004` replaces the `create_order` stub from
+`0003`; `0005` locks down payments and transaction logs; `0006` adds role
+checks on every order status change.
 
 For local development against a local Postgres instead of the hosted
 project:
