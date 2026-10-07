@@ -206,14 +206,74 @@ question.
 - **Errors:**
   - id doesn't exist, or caller is not admin -> `MENU_ITEM_NOT_FOUND`
 
+### processPayment
+- **Screen(s):** Checkout
+- **Backend module:** `backend/services/payments.js` (calls the
+  `checkout_order` database function)
+- **Input:**
+  - orderId: `string` (uuid)
+  - paymentMethod: `'Cash' | 'Credit/Debit' | 'Mobile Pay'`
+  - amount: `number` — must match the order's `orderTotalAmount` exactly
+- **Returns:**
+  ```json
+  {
+    "paymentTransactionIdentifier": "uuid",
+    "associatedOrderIdentifier": "uuid",
+    "paymentMethodType": "Cash",
+    "paymentAmountValue": 7.99,
+    "paymentCompletionStatus": "Completed",
+    "paymentProcessingTimestamp": "2026-01-01T12:05:00Z"
+  }
+  ```
+- **Errors:**
+  - order doesn't exist -> `ORDER_NOT_FOUND`
+  - order is not `Pending`/`In Progress` (already paid, or cancelled) -> `INVALID_ORDER_STATUS`
+  - `paymentMethod` isn't one of the three allowed values -> `INVALID_PAYMENT_METHOD`
+  - `amount` doesn't match the order's total -> `AMOUNT_MISMATCH`
+  - caller is not an authenticated barista/admin -> `UNAUTHORIZED`
+- **Known gap:** this always checks out with zero inventory decremented —
+  there's no menu-item-to-inventory-item mapping anywhere in the schema yet
+  (see the comment at the top of `payments.js`), so stock levels will not
+  reflect real consumption until that mapping exists.
+
+### getPayment
+- **Screen(s):** Checkout, order history (wherever a payment needs to be looked up)
+- **Backend module:** `backend/services/payments.js`
+- **Input:**
+  - paymentId: `string` (uuid)
+- **Returns:** same shape as `processPayment`
+- **Errors:**
+  - no payment with that id -> `PAYMENT_NOT_FOUND`
+
+### listActiveQueueEntries
+- **Screen(s):** Active Orders Queue
+- **Backend module:** `backend/services/queue.js`
+- **Input:** none
+- **Returns:** `Array<{ queueEntryIdentifier, associatedOrderIdentifier, queueEntryStatusType, queueEntryTimestamp }>`, oldest first
+- **Errors:** none beyond the generic `LOOKUP_FAILED`
+
+### subscribeToQueue
+- **Screen(s):** Active Orders Queue
+- **Backend module:** `backend/services/queue.js`
+- **Input:**
+  - onChange: `(change: { eventType: 'INSERT'|'UPDATE'|'DELETE', entry: QueueEntry }) => void`
+- **Returns:** an unsubscribe function (same pattern as `auth.js`'s `onAuthChange`)
+- **Note:** requires `queue_entries` to be in the `supabase_realtime`
+  publication (`0008_queue_realtime.sql`) — without that migration this
+  connects but never fires. `eventType` is included (deviating slightly
+  from the original stub's bare `(entry) => void`) because a `DELETE` (a
+  completed or cancelled order leaving the queue) and an `INSERT`/`UPDATE`
+  are otherwise indistinguishable from the row shape alone.
+
 ---
 
-## Implementation status (end of Sprint 1)
+## Implementation status (end of Sprint 2, in progress)
 
 Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`,
-`orders.js` (except `ModifyExistingOrder`) and `orderItems.js` (POS-9), and
-the `create_order` database function (POS-8). Everything listed below is an
-empty stub.
+`orders.js` (except `ModifyExistingOrder`), `orderItems.js` (POS-9),
+`payments.js` and `queue.js` (POS-19), and the `create_order` (POS-8) and
+`checkout_order` (POS-18) database functions. Everything listed below is
+an empty stub.
 
 ## Remaining operations (signatures TBD as they're implemented)
 
@@ -224,12 +284,10 @@ format above. Placeholder list from `backend/services/`:
   in `orders.js` for why (item-level and status changes already have
   homes elsewhere, order-level "changes" doesn't have settled semantics)
 - MarkOrderAsInProgress (`orderStatus.js`)
-- processPayment, getPayment (`payments.js`)
 - processRefund (`refunds.js`)
 - listTransactionLogs (`transactions.js`)
 - listInventoryItems, createInventoryItem, updateInventoryItem
   (`inventory.js`)
-- listActiveQueueEntries, subscribeToQueue (`queue.js`)
 - generateSalesReport, listSalesReports (`reports.js`)
 - exportReportAsCsv, exportReportAsPdf (`exports.js`)
 - createStaffAccount, updateStaffAccount, deactivateStaffAccount,
