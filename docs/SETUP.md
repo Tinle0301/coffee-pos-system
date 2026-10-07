@@ -81,8 +81,10 @@ timestamp version named after the date).
 Current migrations: `0001_schema`, `0002_rls_policies`, `0003_functions`,
 `0004_create_order` (replaces the `create_order` stub from `0003`),
 `0005_payment_security` (locks down payments and transaction logs),
-`0006_status_role_checks` (role checks on every order status change), and
-`0007_checkout_order` (replaces the `checkout_order` stub from `0003`).
+`0006_status_role_checks` (role checks on every order status change),
+`0007_checkout_order` (replaces the `checkout_order` stub from `0003`), and
+`0008_queue_realtime` (adds `queue_entries` to the `supabase_realtime`
+publication so the queue screen gets live updates).
 
 To apply them to the live project:
 

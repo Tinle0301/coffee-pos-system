@@ -1,0 +1,21 @@
+-- 0008_queue_realtime.sql
+-- POS-19: turn on Realtime for queue_entries.
+--
+-- [realtime] enabled = true in supabase/config.toml only starts the
+-- Realtime server — it doesn't make any table stream changes. A table has
+-- to be added to the supabase_realtime publication before Postgres will
+-- broadcast its inserts/updates/deletes to subscribed clients. Without
+-- this, subscribeToQueue() in backend/services/queue.js connects
+-- successfully but never receives a single event.
+--
+-- Scoped to queue_entries only — that's the one table the active-orders
+-- queue screen needs to update live; nothing else in this ticket needs
+-- push updates.
+--
+-- REPLICA IDENTITY FULL: by default Postgres only includes the primary
+-- key in the "old" row of an UPDATE/DELETE change event. checkout_order
+-- and cancel_order both DELETE the queue_entries row for a finished
+-- order, and the frontend needs more than just the id to know which
+-- order left the queue — so the full old row has to be sent.
+alter table queue_entries replica identity full;
+alter publication supabase_realtime add table queue_entries;
