@@ -1,6 +1,7 @@
 import { menuScreen } from './menu.js';
 import { confirmScreen } from './confirm.js';
 import { newOrderScreen } from './new-order.js';
+import { refundScreen } from './refund.js';
 import { logoutComponent } from './logout.js';
 import { renderLoginScreen } from './login.js';
 import { session } from './backend/auth.js';
@@ -8,13 +9,15 @@ import { session } from './backend/auth.js';
 // Global application memory state — staffId starts null
 const state = {
   currentOrder: [], // filled by the New Order screen (new-order.js)
-  staffId: null
+  staffId: null,
+  staffRole: null
 };
 
 const routes = {
   'new-order': newOrderScreen,
   menu: menuScreen,
-  confirm: confirmScreen
+  confirm: confirmScreen,
+  refund: refundScreen
 };
 
 const appRoot = document.querySelector('#app');
@@ -22,12 +25,13 @@ let contentRoot;
 
 // The header (title, staff name, logout) only makes sense once someone is
 // actually signed in — the login screen gets a bare shell with no header.
-function renderAuthenticatedShell(staffName) {
+function renderAuthenticatedShell(staffName, isAdmin = false) {
   appRoot.innerHTML = `
     <div class="app-shell">
       <header class="app-header">
         <span class="app-header-title">Coffee POS</span>
         <span class="app-header-employee">${staffName || ''}</span>
+        ${isAdmin ? '<button id="header-refunds-btn" class="header-nav-btn">Refunds</button>' : ''}
         <button id="global-logout-btn">Log Out</button>
       </header>
       <main id="app-content"></main>
@@ -35,6 +39,8 @@ function renderAuthenticatedShell(staffName) {
   `;
   logoutComponent.bindLogoutButton('global-logout-btn');
   contentRoot = document.querySelector('#app-content');
+  const refundsBtn = document.getElementById('header-refunds-btn');
+  if (refundsBtn) refundsBtn.addEventListener('click', () => navigate('refund'));
 }
 
 function renderLoginShell() {
@@ -45,6 +51,8 @@ function renderLoginShell() {
 export function navigate(screenName) {
   const targetScreen = routes[screenName];
   if (!targetScreen) return;
+  // Hiding the button isn't security (RLS is), but don't draw an admin screen to a barista.
+  if (screenName === 'refund' && state.staffRole !== 'Admin') return;
 
   // 1. Clear layout and inject fresh layout template string
   contentRoot.innerHTML = targetScreen.render(state);
@@ -59,7 +67,8 @@ function onLoginSuccess(user) {
   // policy checks against, so this has to be the real value, not a
   // hardcoded placeholder.
   state.staffId = user.staffAccountIdentifier;
-  renderAuthenticatedShell(user.staffFullName);
+  state.staffRole = user.staffRoleType;
+  renderAuthenticatedShell(user.staffFullName, user.staffRoleType === 'Admin');
   navigate('new-order');
 }
 
