@@ -2,6 +2,7 @@ import { menuScreen } from './menu.js';
 import { newOrderScreen } from './new-order.js';
 import { confirmScreen } from './confirm.js';
 import { paymentScreen } from './payment.js';
+import { queueScreen } from './queue.js';
 import { logoutComponent } from './logout.js';
 import { renderLoginScreen } from './login.js';
 import { session } from './backend/auth.js';
@@ -17,7 +18,8 @@ const routes = {
   'new-order': newOrderScreen,
   menu: menuScreen,
   confirm: confirmScreen,
-  payment: paymentScreen
+  payment: paymentScreen,
+  queue: queueScreen // adds queue.
 };
 
 const appRoot = document.querySelector('#app');
@@ -28,8 +30,11 @@ const appRoot = document.querySelector('#app');
 appRoot.innerHTML = `
   <div id="app-content"></div>
   <button id="global-logout-btn">Log Out</button>
+  <button id="global-queue-btn">ActiveOrders</button>
 `;
 logoutComponent.bindLogoutButton('global-logout-btn');
+document.querySelector('#global-queue-btn').addEventListener('click', () => { navigate('queue');
+});
 
 const contentRoot = document.querySelector('#app-content');
 
