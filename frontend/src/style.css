@@ -450,7 +450,7 @@ button:active:not(:disabled) {
   margin: 0;
 }
 
-.order-line > div:first-child { grid-area: info; }
+.order-line > .order-line-info { grid-area: info; }
 .order-line-price { grid-area: price; font-weight: 600; padding-top: 10px; }
 .order-line-actions { grid-area: actions; display: flex; align-items: center; gap: 4px; }
 .qty-stepper {
@@ -615,3 +615,6 @@ button:active:not(:disabled) {
 .modal-actions button {
   flex: 1;
 }
+
+.order-line-info.editable { cursor: pointer; border-radius: 8px; padding: 4px 6px; margin: -4px -6px; transition: background 0.15s ease; }
+.order-line-info.editable:hover, .order-line-info.editable:focus-visible { background: rgba(192, 138, 46, 0.12); outline: none; }

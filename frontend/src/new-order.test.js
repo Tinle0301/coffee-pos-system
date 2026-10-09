@@ -298,4 +298,28 @@ describe('newOrderScreen', () => {
       { menuItemIdentifier: '1', quantity: 2, customization: 'Small, Whole milk' },
     ]);
   });
+
+  it('clicking the order line itself opens the same options popup, prefilled', async () => {
+    await mount();
+    addButtonFor('Latte').click();
+    pick('size', 'medium');
+    pick('addon', 'extra_shot');
+    $('#modal-add').click();
+
+    $('.order-line-info').click();
+    expect($('#customize-modal').hidden).toBe(false);
+    expect($('input[name="size"]:checked').value).toBe('medium');
+    expect($('input[name="addon"][value="extra_shot"]').checked).toBe(true);
+    pick('milk', 'oat');
+    $('#modal-add').click();
+    expect(currentOrder).toHaveLength(1);
+    expect(currentOrder[0].customization).toBe('Medium, Oat milk, Extra shot');
+  });
+
+  it('pastry lines are not clickable for editing', async () => {
+    await mount();
+    openTab('Bakery');
+    addButtonFor('Croissant').click();
+    expect($('.order-line-info.editable')).toBeNull();
+  });
 });

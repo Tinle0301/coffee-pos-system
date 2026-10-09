@@ -259,6 +259,9 @@ export const newOrderScreen = {
         const li = document.createElement('li');
         li.className = 'order-line';
         const info = document.createElement('div');
+        info.className = 'order-line-info';
+        const menuItem = allItems.find((i) => i.menuItemIdentifier === line.menuItem.menu_item_identifier);
+        const editable = Boolean(line.selection && menuItem);
         const name = document.createElement('p');
         name.textContent = line.menuItem.menu_item_name;
         info.appendChild(name);
@@ -268,6 +271,18 @@ export const newOrderScreen = {
           detail.textContent = line.customization;
           info.appendChild(detail);
         }
+        if (editable) {
+          // Tap the item itself to re-open the same options popup, prefilled.
+          info.classList.add('editable');
+          info.tabIndex = 0;
+          info.setAttribute('role', 'button');
+          info.setAttribute('aria-label', `Edit ${line.menuItem.menu_item_name}`);
+          info.addEventListener('click', () => openCustomizeModal(menuItem, line));
+          info.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCustomizeModal(menuItem, line); }
+          });
+        }
+
         const price = document.createElement('span');
         price.className = 'order-line-price';
         price.textContent = formatPrice(line.lineTotal);
@@ -285,13 +300,12 @@ export const newOrderScreen = {
 
         const actions = document.createElement('div');
         actions.className = 'order-line-actions';
-        const menuItem = allItems.find((i) => i.menuItemIdentifier === line.menuItem.menu_item_identifier);
-        if (line.selection && menuItem) {
+        if (editable) {
           const editBtn = document.createElement('button');
           editBtn.type = 'button';
           editBtn.className = 'order-line-edit';
           editBtn.textContent = 'Edit';
-          editBtn.setAttribute('aria-label', `Edit ${line.menuItem.menu_item_name}`);
+          editBtn.setAttribute('aria-label', `Edit options for ${line.menuItem.menu_item_name}`);
           editBtn.addEventListener('click', () => openCustomizeModal(menuItem, line));
           actions.appendChild(editBtn);
         }

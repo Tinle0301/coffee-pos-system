@@ -7,9 +7,7 @@ import { session } from './backend/auth.js';
 
 // Global application memory state — staffId starts null
 const state = {
-  currentOrder: [
-    { menuItem: { menu_item_identifier: '1', menu_item_name: 'Latte' }, quantity: 2, lineTotal: 9.00 }
-  ],
+  currentOrder: [], // filled by the New Order screen (new-order.js)
   staffId: null
 };
 
