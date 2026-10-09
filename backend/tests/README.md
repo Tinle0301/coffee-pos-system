@@ -15,6 +15,16 @@ that before merge, not just via code review.
    local Supabase REST API with test JWTs for a barista and an admin).
    Frontend unit tests already exist: `npx vitest run` in `frontend/src/`.*
 
+   **Payment and log security (POS-16):** `payment_security_check.sql` checks
+   that payments and transaction logs cannot be altered. Run it after
+   migrations `0001`–`0005` with
+   `psql "<connection-string>" -f backend/tests/payment_security_check.sql`.
+   It runs in one transaction and rolls back, so it leaves no data behind.
+
+   **Order status role checks (POS-17):** `status_role_check.sql` checks who
+   may change an order's status. Run it after migrations `0001`–`0006` the
+   same way. It also rolls back.
+
 ## What to cover
 
 - A barista can read only their own `staff_accounts` row (not another
