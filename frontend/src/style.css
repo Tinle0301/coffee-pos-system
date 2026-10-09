@@ -618,3 +618,17 @@ button:active:not(:disabled) {
 
 .order-line-info.editable { cursor: pointer; border-radius: 8px; padding: 4px 6px; margin: -4px -6px; transition: background 0.15s ease; }
 .order-line-info.editable:hover, .order-line-info.editable:focus-visible { background: rgba(192, 138, 46, 0.12); outline: none; }
+
+.btn-danger-outline {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  color: var(--danger-color) !important;
+  border: 1px solid var(--danger-color) !important;
+}
+.btn-danger-outline:hover:not(:disabled) { background: rgba(176, 70, 58, 0.08) !important; }
+.btn-danger {
+  min-height: 44px;
+  background: var(--danger-color) !important;
+  color: #fff !important;
+}

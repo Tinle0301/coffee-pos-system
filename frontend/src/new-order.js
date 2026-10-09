@@ -64,6 +64,7 @@ export const newOrderScreen = {
             <div class="order-totals-row total"><span>Total</span><span id="order-total">$0.00</span></div>
           </div>
           <button id="go-to-confirm-btn">Proceed to Confirmation</button>
+          <button type="button" id="cancel-order-btn" class="btn-ghost btn-danger-outline">Cancel Order</button>
         </aside>
       </div>
 
@@ -76,6 +77,17 @@ export const newOrderScreen = {
           <div class="modal-actions">
             <button type="button" id="modal-cancel" class="btn-ghost">Cancel</button>
             <button type="button" id="modal-add">Add to order</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="cancel-modal" class="modal-overlay" hidden>
+        <div class="screen-container modal-card" role="alertdialog" aria-modal="true" aria-labelledby="cancel-title">
+          <h2 id="cancel-title">Cancel this order?</h2>
+          <p>All items will be removed. Nothing has been paid or sent to the kitchen.</p>
+          <div class="modal-actions">
+            <button type="button" id="cancel-keep" class="btn-ghost">Keep order</button>
+            <button type="button" id="cancel-confirm" class="btn-danger">Yes, cancel order</button>
           </div>
         </div>
       </div>
@@ -102,6 +114,8 @@ export const newOrderScreen = {
     const addonOptionsEl = document.getElementById('addon-options');
 
     const modalAddBtn = document.getElementById('modal-add');
+    const cancelOrderBtn = document.getElementById('cancel-order-btn');
+    const cancelModal = document.getElementById('cancel-modal');
     document.getElementById('go-to-confirm-btn').addEventListener('click', () => navigate('confirm'));
 
     function renderTabs(categories) {
@@ -214,6 +228,20 @@ export const newOrderScreen = {
       closeModal();
     });
 
+    // ---- Cancel an unpaid order: nothing is saved until it is submitted on the
+    // confirm screen, so cancelling just empties the in-memory order. ----
+    cancelOrderBtn.addEventListener('click', () => { cancelModal.hidden = false; });
+    document.getElementById('cancel-keep').addEventListener('click', () => { cancelModal.hidden = true; });
+    cancelModal.addEventListener('click', (e) => { if (e.target === cancelModal) cancelModal.hidden = true; });
+    document.getElementById('cancel-confirm').addEventListener('click', () => {
+      currentOrder.length = 0; // same array main.js passes to every screen
+      cancelModal.hidden = true;
+      modal.hidden = true;
+      activeItem = null;
+      editingLine = null;
+      renderOrder();
+    });
+
     // confirm.js's preparePayload() reads line.menuItem.menu_item_identifier
     // (snake_case) even though listMenuItems() itself returns camelCase
     // fields — see menu.js's own comment on that mapping. Storing both
@@ -252,6 +280,7 @@ export const newOrderScreen = {
     function renderOrder() {
       orderList.innerHTML = '';
       orderEmpty.hidden = currentOrder.length > 0;
+      cancelOrderBtn.disabled = currentOrder.length === 0;
       let subtotal = 0;
 
       currentOrder.forEach((line, index) => {

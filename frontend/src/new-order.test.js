@@ -322,4 +322,63 @@ describe('newOrderScreen', () => {
     addButtonFor('Croissant').click();
     expect($('.order-line-info.editable')).toBeNull();
   });
+
+  // --- Cancel an unpaid order ---------------------------------------------
+
+  it('Cancel Order is disabled while the order is empty', async () => {
+    await mount();
+    expect($('#cancel-order-btn').disabled).toBe(true);
+    addButtonFor('Latte').click();
+    $('#modal-add').click();
+    expect($('#cancel-order-btn').disabled).toBe(false);
+  });
+
+  it('asks before cancelling, and "Keep order" leaves everything as is', async () => {
+    await mount();
+    addButtonFor('Latte').click();
+    $('#modal-add').click();
+
+    $('#cancel-order-btn').click();
+    expect($('#cancel-modal').hidden).toBe(false);
+    expect(currentOrder).toHaveLength(1);
+
+    $('#cancel-keep').click();
+    expect($('#cancel-modal').hidden).toBe(true);
+    expect(currentOrder).toHaveLength(1);
+  });
+
+  it('confirming cancel empties the order and resets totals so the barista can start over', async () => {
+    await mount();
+    addButtonFor('Latte').click();
+    $('#modal-add').click();
+    openTab('Bakery');
+    addButtonFor('Croissant').click();
+
+    $('#cancel-order-btn').click();
+    $('#cancel-confirm').click();
+
+    expect(currentOrder).toHaveLength(0); // same array, emptied in place
+    expect($('#cancel-modal').hidden).toBe(true);
+    expect($('#order-empty').hidden).toBe(false);
+    expect(totals()).toEqual(['$0.00', '$0.00', '$0.00']);
+
+    addButtonFor('Croissant').click(); // can start a fresh order
+    expect(currentOrder).toHaveLength(1);
+  });
+
+  it('cancel on the confirm screen needs two taps, then clears the order and returns to New Order', async () => {
+    await mount();
+    addButtonFor('Latte').click();
+    $('#modal-add').click();
+
+    container.innerHTML = confirmScreen.render();
+    confirmScreen.init(navigate, currentOrder, 'staff-1');
+    $('#cancel-order-btn').click();
+    expect(currentOrder).toHaveLength(1);
+    expect(navigate).not.toHaveBeenCalled();
+
+    $('#cancel-order-btn').click();
+    expect(currentOrder).toHaveLength(0);
+    expect(navigate).toHaveBeenCalledWith('new-order');
+  });
 });
