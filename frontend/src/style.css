@@ -427,8 +427,9 @@ button:active:not(:disabled) {
 .order-line {
   display: grid;
   grid-template-columns: 1fr auto auto;
+  grid-template-areas: "info price actions" "qty qty qty";
   align-items: start;
-  gap: 10px;
+  gap: 8px 10px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--bg-panel);
   animation: order-line-in 0.28s ease;
@@ -449,6 +450,41 @@ button:active:not(:disabled) {
   margin: 0;
 }
 
+.order-line > div:first-child { grid-area: info; }
+.order-line-price { grid-area: price; font-weight: 600; padding-top: 10px; }
+.order-line-actions { grid-area: actions; display: flex; align-items: center; gap: 4px; }
+.qty-stepper {
+  grid-area: qty;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.qty-btn {
+  width: 44px !important;
+  min-height: 44px;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 1.25rem;
+  border-radius: 10px;
+  background: var(--bg-panel) !important;
+  color: var(--text-primary, inherit) !important;
+  border: 1px solid var(--disabled-color) !important;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+.qty-btn:active:not(:disabled) { transform: scale(0.92); }
+.qty-btn:disabled { opacity: 0.4; }
+.qty-value { min-width: 28px; text-align: center; font-weight: 600; }
+.order-line-edit {
+  min-height: 44px;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  background: transparent !important;
+  color: var(--accent-color) !important;
+  border: 1px solid var(--accent-color) !important;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
 .order-line-detail {
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -456,8 +492,8 @@ button:active:not(:disabled) {
 }
 
 .order-line-remove {
-  width: 36px !important;
-  min-height: 36px;
+  width: 44px !important;
+  min-height: 44px;
   background: transparent !important;
   color: var(--danger-color) !important;
   font-size: 1.2rem;
