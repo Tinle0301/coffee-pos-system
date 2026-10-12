@@ -32,7 +32,9 @@ export async function listActiveQueueEntries() {
 /**
  * Subscribes to Realtime updates on queue_entries. A row appears here on
  * create_order (status 'Pending'), changes on update_order_status, and
- * disappears on checkout_order or cancel_order — eventType tells the
+ * disappears on cancel_order (checkout_order no longer removes it — pay
+ * first, then make, see POS-39 — the order stays in the queue until
+ * someone actually marks it done or cancels it) — eventType tells the
  * caller which happened, since an INSERT/UPDATE's entry and a DELETE's
  * entry are otherwise indistinguishable from the row shape alone.
  *
