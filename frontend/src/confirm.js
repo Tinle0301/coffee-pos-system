@@ -7,12 +7,27 @@ export const confirmScreen = {
       <div class="screen-container">
         <h2>Confirm POS Transaction</h2>
         <button id="confirm-order-btn">Submit Order to Kitchen</button>
+        <button type="button" id="cancel-order-btn" class="btn-ghost btn-danger-outline">Cancel Order</button>
         <div id="order-status-msg"></div>
       </div>
     `;
   },
   init(navigate, currentOrder, staffId) {
     const confirmBtn = document.getElementById('confirm-order-btn');
+    const cancelBtn = document.getElementById('cancel-order-btn');
+
+    // Cancel an unpaid order: two taps so a stray touch can't wipe it.
+    // Nothing is saved until submit, so this just empties the in-memory order.
+    let armed = false;
+    cancelBtn.addEventListener('click', () => {
+      if (!armed) {
+        armed = true;
+        cancelBtn.textContent = 'Tap again to cancel order';
+        return;
+      }
+      currentOrder.length = 0;
+      navigate('new-order');
+    });
     
     confirmBtn.addEventListener('click', async () => {
       // Rule Protection: Guard against double-tap network requests
@@ -23,13 +38,19 @@ export const confirmScreen = {
       const {data:order,error} = await CreateNewOrder(structuredItems, staffId);
 
       if (error) {
-        const order = await CreateNewOrder(structuredItems, staffId);
+        // No automatic retry: a second call after a slow failure can put
+        // the same order in the kitchen twice.
         document.getElementById('order-status-msg').textContent  = error.message;
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Submit Order to Kitchen';
         return;
       }
-      document.getElementById('order-status-msg').textContent = 'Success! Order # {order.orderIdentifier}';
+      // Backticks + ${...} so the real number is shown, not the text.
+      // Works whether orders.js returns { orderIdentifier } or the id itself.
+      const orderNumber = order?.orderIdentifier ?? order;
+      document.getElementById('order-status-msg').textContent = `Success! Order #${orderNumber}`;
+      confirmBtn.textContent = 'Order sent';
+      cancelBtn.hidden = true; // already sent — can't be cancelled from here
       
     });
   },
@@ -53,4 +74,3 @@ export const confirmScreen = {
     return parts.length ? parts.join(', ') : 'None';
   }
 };
-
