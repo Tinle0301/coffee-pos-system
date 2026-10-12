@@ -21,3 +21,5 @@ supabase/.temp/
 __pycache__/
 .venv/
 *.pyc
+
+frontend/src/.vite/
