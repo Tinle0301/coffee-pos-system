@@ -178,11 +178,19 @@ export const newOrderScreen = {
       const addons = ADDON_OPTIONS.filter((o) =>
         [...modal.querySelectorAll('input[name="addon"]:checked')].map((el) => el.value).includes(o.id)
       );
+
+      // POS-20: Preserve stable option IDs for inventory deduction.
+      const customizationData = {
+        size: size.id,
+        milk: milk.id,
+        addons: addons.map((a) => a.id),
+      };
+
       let price = round2(activeItem.menuItemPriceAmount);
       price = round2(price + size.delta + milk.delta);
       for (const a of addons) price = round2(price + a.delta);
       const detail = [size.label, `${milk.label} milk`, ...addons.map((a) => a.label)].join(', ');
-      addLine(activeItem, detail, price);
+      addLine(activeItem, detail, price, customizationData);
       modal.hidden = true;
       activeItem = null;
     });
@@ -191,11 +199,15 @@ export const newOrderScreen = {
     // (snake_case) even though listMenuItems() itself returns camelCase
     // fields — see menu.js's own comment on that mapping. Storing both
     // shapes on menuItem keeps this line compatible with confirm.js as-is.
-    function addLine(item, detail, price) {
+    function addLine(item, detail, price, customizationData = null) {
       currentOrder.push({
-        menuItem: { menu_item_identifier: item.menuItemIdentifier, menu_item_name: item.menuItemName },
+        menuItem: { 
+          menu_item_identifier: item.menuItemIdentifier, 
+          menu_item_name: item.menuItemName 
+        },
         quantity: 1,
         customization: detail,
+        customizationData, // Ryan Grubert - POS-20 New Object for customization data, AWAITING BACKEND IMPLEMENTATION. > PLACEHOLDER FOR NOW.
         lineTotal: price,
       });
       renderOrder();

@@ -23,7 +23,7 @@ export const confirmScreen = {
       const {data:order,error} = await CreateNewOrder(structuredItems, staffId);
 
       if (error) {
-        const order = await CreateNewOrder(structuredItems, staffId);
+        const order = await CreateNewOrder(structuredItems, staffId); // POS-20 - Miscellaneous Note: Possible Error for duplicate orders if certain failures are met.
         document.getElementById('order-status-msg').textContent  = error.message;
         confirmBtn.disabled = false;
         confirmBtn.textContent = 'Submit Order to Kitchen';
@@ -37,7 +37,8 @@ export const confirmScreen = {
     return orderLines.map(line => ({
       menuItemIdentifier: line.menuItem.menu_item_identifier,
       quantity: line.quantity,
-      customization: this.describeCustomization(line.customization)
+      customization: this.describeCustomization(line.customization),
+      customizationData: line.customizationData ?? null, // POS-20: Include customizationData in the payload if it exists, otherwise set to null
     }));
   },
   describeCustomization(customization) {

@@ -18,3 +18,25 @@ values
   ('20000000-0000-0000-0000-000000000001', 'Espresso Beans (lb)', 25, 5),
   ('20000000-0000-0000-0000-000000000002', 'Whole Milk (gal)', 10, 2),
   ('20000000-0000-0000-0000-000000000003', 'Blueberry Muffins (each)', 12, 3);
+  -- POS-20: Additional inventory used by menu recipes/customizations.
+  ('20000000-0000-0000-0000-000000000004', 'Coffee Beans (lb)', 25, 5),
+  ('20000000-0000-0000-0000-000000000005', 'Skim Milk (gal)', 10, 2),
+  ('20000000-0000-0000-0000-000000000006', 'Oat Milk (gal)', 10, 2),
+  ('20000000-0000-0000-0000-000000000007', 'Almond Milk (gal)', 10, 2),
+  ('20000000-0000-0000-0000-000000000008', 'Whipped Cream (servings)', 30, 5),
+  ('20000000-0000-0000-0000-000000000009', 'Decaf Espresso Beans (lb)', 15, 3);
+
+-- POS-20: Base inventory requirements for one menu item.
+insert into menu_item_inventory_requirements (
+  menu_item_identifier,
+  inventory_item_identifier,
+  quantity_required_value
+)
+values
+  -- Drip Coffee: Coffee Beans
+  ('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000004',0.04),
+  -- Latte: Espresso Beans + Whole Milk
+  ('10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001',0.04),
+  ('10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002',0.10),
+  -- Blueberry Muffin: one muffin
+  ('10000000-0000-0000-0000-000000000003','20000000-0000-0000-0000-000000000003',1.00);

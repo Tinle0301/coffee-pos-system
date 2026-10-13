@@ -20,7 +20,8 @@ describe('Story #12: Confirm Order API Payload Wrapper', () => {
     expect(resultPayload[0]).toEqual({
       menuItemIdentifier: 'latte-abc',
       quantity: 2,
-      customization: 'Oat Milk, Extra Shot'
+      customization: 'Oat Milk, Extra Shot',
+      customizationData: null
     });
   });
 });

@@ -14,8 +14,17 @@ import { supabase } from '../supabase-client.js';
 
 /** @typedef {{ code: string, message: string }} ServiceError */
 
-/**
- * @param {{ menuItemIdentifier: string, quantity: number, customization?: string }[]} items
+/** POS-20: Passes updated customizationData to the backend for storage. 
+ * @param {{
+ *   menuItemIdentifier: string,
+ *   quantity: number,
+ *   customization?: string,
+ *   customizationData?: { 
+ *     size: string,
+ *     milk: string,
+ *     addons: string[]
+ *   } | null
+ * }[]} items
  * @param {string} staffId
  * @returns {Promise<{ data: import('../models/order.js').Order | null, error: ServiceError | null }>}
  */
@@ -52,6 +61,7 @@ export async function CreateNewOrder(items, staffId) {
       menu_item_id: item.menuItemIdentifier,
       quantity: item.quantity,
       customization: item.customization ?? null,
+      customization_data: item.customizationData ?? null, // POS-20: Pass stable customization IDs to the database.
       price,
     });
   }
