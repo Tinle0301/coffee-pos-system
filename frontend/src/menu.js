@@ -46,8 +46,8 @@ export const menuScreen = {
   // Story #11: render each category as a section, dimming/disabling unavailable items
   generateMenuHTML(categorizedItems) {
     return Object.entries(categorizedItems)
-      .map(([category, items]) => {
-        const itemsHtml = items
+      .map(([category, items]) => { // map each category to its HTML section
+        const itemsHtml = items 
           .map((item) => {
             const isAvailable = item.menuItemAvailabilityStatus;
             const disabledAttrs = isAvailable ? '' : 'disabled class="item-disabled"';
