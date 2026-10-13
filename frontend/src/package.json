@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "npx serve ../..",
-    "test": "vitest"
+    "test": "vitest",
+    "sync-backend": "node ../../scripts/sync-backend.mjs",
+    "check-backend": "node ../../scripts/sync-backend.mjs --check"
   },
   "devDependencies": {
     "jsdom": "^26.0.0",

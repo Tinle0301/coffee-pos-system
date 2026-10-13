@@ -241,3 +241,13 @@ stories with code patterns are in
 - [x] **POS-8** `create_order` function writing all four tables atomically (Nghia)
 - [x] **POS-9** `menu.js`, `orders.js`, `orderItems.js` implemented (Nghia)
 - [x] Signatures published to `API_CONTRACT.md` — **day one, before implementing**
+
+## Keeping the live site's copy in sync
+
+The live site uses a copy of some of these files in `frontend/src/backend/`.
+After changing `config.js`, `supabase-client.js`, `services/auth.js`,
+`services/menu.js`, `services/orders.js`, `services/orderItems.js`,
+`services/payments.js`, `services/queue.js` or `services/orderStatus.js`, run
+`node scripts/sync-backend.mjs` from the repo root and commit the updated
+copy. CI fails the PR if the copy is out of date. See
+[../frontend/src/backend/README.md](../frontend/src/backend/README.md).
