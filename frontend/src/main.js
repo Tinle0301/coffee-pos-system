@@ -6,18 +6,24 @@ import { logoutComponent } from './logout.js';
 import { renderLoginScreen } from './login.js';
 import { session } from './backend/auth.js';
 
+import { paymentScreen } from './payment.js';
+import { queueScreen } from './queue.js';
+
 // Global application memory state — staffId starts null
 const state = {
   currentOrder: [], // filled by the New Order screen (new-order.js)
   staffId: null,
-  staffRole: null
+  staffRole: null,
+  lastOrder: null
 };
 
 const routes = {
   'new-order': newOrderScreen,
   menu: menuScreen,
   confirm: confirmScreen,
-  refund: refundScreen
+  refund: refundScreen,
+  payment: paymentScreen,
+  queue: queueScreen
 };
 
 const appRoot = document.querySelector('#app');
@@ -32,6 +38,7 @@ function renderAuthenticatedShell(staffName, isAdmin = false) {
         <span class="app-header-title">Coffee POS</span>
         <span class="app-header-employee">${staffName || ''}</span>
         ${isAdmin ? '<button id="header-refunds-btn" class="header-nav-btn">Refunds</button>' : ''}
+        <button id="header-active-orders-btn" class="header-nav-btn">Active Orders</button>
         <button id="global-logout-btn">Log Out</button>
       </header>
       <main id="app-content"></main>
@@ -41,6 +48,10 @@ function renderAuthenticatedShell(staffName, isAdmin = false) {
   contentRoot = document.querySelector('#app-content');
   const refundsBtn = document.getElementById('header-refunds-btn');
   if (refundsBtn) refundsBtn.addEventListener('click', () => navigate('refund'));
+    const activeOrdersBtn = document.getElementById('header-active-orders-btn');
+  if (activeOrdersBtn) {
+    activeOrdersBtn.addEventListener('click', () => navigate('queue'));
+}
 }
 
 function renderLoginShell() {
