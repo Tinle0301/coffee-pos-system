@@ -69,7 +69,7 @@ export function navigate(screenName) {
   contentRoot.innerHTML = targetScreen.render(state);
 
   // 2. Hydrate action listeners & pass the specific state pieces each screen needs
-  targetScreen.init(navigate, state.currentOrder, state.staffId);
+  targetScreen.init(navigate, state.currentOrder, state.staffId, state);
 }
 
 function onLoginSuccess(user) {
