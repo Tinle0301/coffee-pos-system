@@ -12,7 +12,7 @@ export const confirmScreen = {
       </div>
     `;
   },
-  init(navigate, currentOrder, staffId) {
+  init(navigate, currentOrder, staffId, appState) {
     const confirmBtn = document.getElementById('confirm-order-btn');
     const cancelBtn = document.getElementById('cancel-order-btn');
 
@@ -48,7 +48,9 @@ export const confirmScreen = {
       // Backticks + ${...} so the real number is shown, not the text.
       // Works whether orders.js returns { orderIdentifier } or the id itself.
       const orderNumber = order?.orderIdentifier ?? order;
-      document.getElementById('order-status-msg').textContent = `Success! Order #${orderNumber}`;
+      appState.lastOrder = order;
+      navigate('payment');
+      //document.getElementById('order-status-msg').textContent = `Success! Order #${orderNumber}`;
       confirmBtn.textContent = 'Order sent';
       cancelBtn.hidden = true; // already sent — can't be cancelled from here
       
