@@ -82,9 +82,12 @@ Current migrations: `0001_schema`, `0002_rls_policies`, `0003_functions`,
 `0004_create_order` (replaces the `create_order` stub from `0003`),
 `0005_payment_security` (locks down payments and transaction logs),
 `0006_status_role_checks` (role checks on every order status change),
-`0007_checkout_order` (replaces the `checkout_order` stub from `0003`), and
+`0007_checkout_order` (replaces the `checkout_order` stub from `0003`),
 `0008_queue_realtime` (adds `queue_entries` to the `supabase_realtime`
-publication so the queue screen gets live updates).
+publication so the queue screen gets live updates), `0009_process_refund`,
+`0010_checkout_keeps_order_open` (pay first, then make) and
+`0014_cancel_order` (replaces the `cancel_order` stub from `0003`).
+`0011`–`0013` are reserved for POS-21, POS-20 and POS-22.
 
 To apply them to the live project:
 

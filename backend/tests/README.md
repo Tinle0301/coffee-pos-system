@@ -25,6 +25,11 @@ that before merge, not just via code review.
    may change an order's status. Run it after migrations `0001`–`0006` the
    same way. It also rolls back.
 
+   **Cancel order (POS-37):** `cancel_order_check.sql` checks that unpaid
+   orders can be cancelled (status, queue and log), that paid or finished
+   orders can't, and who may cancel. Run it after all migrations. It also
+   rolls back.
+
 ## What to cover
 
 - A barista can read only their own `staff_accounts` row (not another
