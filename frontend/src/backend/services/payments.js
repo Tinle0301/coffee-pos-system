@@ -40,7 +40,7 @@ export async function processPayment(orderId, paymentMethod, amount) {
     order_id: orderId,
     payment_method: paymentMethod,
     amount,
-    inventory_consumption: [], // see the gap noted at the top of this file
+    inventory_consumption: [], // POS-20: empty array tells checkout_order to calculate from recipes
   });
 
   if (rpcError) {
@@ -72,7 +72,7 @@ export async function getPayment(paymentId) {
 }
 
 /**
- * checkout_order (0007_checkout_order.sql) raises exceptions shaped like
+ * checkout_order raises exceptions shaped like
  * 'CODE: message'. Same unpacking as orders.js's mapCreateOrderError — if
  * the database function's message format ever changes, this must change
  * with it.

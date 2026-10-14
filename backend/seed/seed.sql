@@ -18,3 +18,17 @@ values
   ('20000000-0000-0000-0000-000000000001', 'Espresso Beans (lb)', 25, 5),
   ('20000000-0000-0000-0000-000000000002', 'Whole Milk (gal)', 10, 2),
   ('20000000-0000-0000-0000-000000000003', 'Blueberry Muffins (each)', 12, 3);
+
+-- POS-20: Base ingredient requirements for each sample menu item.
+--
+-- For this project, Espresso Beans are used as the bean inventory for
+-- both Drip Coffee and espresso-based drinks.
+insert into menu_item_ingredients (menu_item_identifier, inventory_item_identifier,quantity_per_item_value)
+values
+  -- Drip Coffee: Espresso Beans
+  ('10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 0.04),
+  -- Latte: Espresso Beans + Whole Milk
+  ('10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 0.04),
+  ('10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 0.10),
+  -- Blueberry Muffin: one inventory unit per menu item
+  ('10000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000003',1.00);
