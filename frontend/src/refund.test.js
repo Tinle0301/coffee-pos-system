@@ -2,11 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { refundScreen, parseAmount, isRefundable } from './refund.js';
 
 // Node can't load the CDN-based supabase client, so mock the adapter.
-vi.mock('./refund-api.js', () => ({ lookUpPayment: vi.fn(), submitRefund: vi.fn() }));
-import { lookUpPayment, submitRefund } from './refund-api.js';
+vi.mock('./refund-api.js', () => ({ lookUpPayment: vi.fn(), submitRefund: vi.fn(), listRecentPayments: vi.fn() }));
+import { lookUpPayment, submitRefund, listRecentPayments } from './refund-api.js';
+import { mapRefundError } from './refund-errors.js';
 
 const payment = {
   paymentTransactionIdentifier: 'pay-1',
+  associatedOrderIdentifier: 'abcdef12-0000-0000-0000-000000000000',
   paymentMethodType: 'Credit/Debit',
   paymentAmountValue: 12.5,
   paymentCompletionStatus: 'Completed',
@@ -24,6 +26,7 @@ describe('refundScreen (Admin refund)', () => {
     document.body.innerHTML = '<div id="app-content"></div>';
     container = document.getElementById('app-content');
     navigate = vi.fn();
+    listRecentPayments.mockResolvedValue({ data: [], error: null });
     container.innerHTML = refundScreen.render();
     refundScreen.init(navigate);
     lookUpPayment.mockResolvedValue({ data: payment, error: null });
@@ -156,5 +159,76 @@ describe('refundScreen (Admin refund)', () => {
   it('Back to orders returns to the New Order screen', () => {
     $('#refund-back').click();
     expect(navigate).toHaveBeenCalledWith('new-order');
+  });
+
+  // --- Pick from recent payments (no typing a UUID) ------------------------
+
+  async function mountWithRecent(list) {
+    document.body.innerHTML = '<div id="app-content"></div>';
+    container = document.getElementById('app-content');
+    listRecentPayments.mockResolvedValue({ data: list, error: null });
+    container.innerHTML = refundScreen.render();
+    refundScreen.init(navigate);
+    await flush();
+  }
+
+  it('lists recent completed payments by order number, amount and method', async () => {
+    await mountWithRecent([payment, { ...payment, paymentTransactionIdentifier: 'pay-2', associatedOrderIdentifier: '99999999-x', paymentAmountValue: 4, paymentMethodType: 'Cash' }]);
+    const lines = [...container.querySelectorAll('.refund-recent-line .order-line-name')].map((e) => e.textContent);
+    expect(lines).toEqual(['Order #abcdef12 · $12.50', 'Order #99999999 · $4.00']);
+  });
+
+  it('skips payments that are not refundable in the recent list', async () => {
+    await mountWithRecent([{ ...payment, paymentCompletionStatus: 'Refunded' }]);
+    expect(container.querySelectorAll('.refund-recent-line')).toHaveLength(0);
+    expect($('#refund-recent-msg').textContent).toBe('No completed payments to refund yet.');
+  });
+
+  it('tapping Refund on a recent payment opens it ready to refund', async () => {
+    await mountWithRecent([payment]);
+    $('.refund-select-btn').click();
+    expect($('#refund-details').hidden).toBe(false);
+    expect($('#refund-paid').textContent).toBe('$12.50');
+    $('#refund-review-btn').click();
+    $('#refund-confirm-go').click();
+    await flush();
+    expect(submitRefund).toHaveBeenCalledWith('pay-1', 'Full', 12.5);
+  });
+
+  it('reloads the recent list after a successful refund', async () => {
+    await mountWithRecent([payment]);
+    $('.refund-select-btn').click();
+    $('#refund-review-btn').click();
+    listRecentPayments.mockClear();
+    $('#refund-confirm-go').click();
+    await flush();
+    expect(listRecentPayments).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a message if the recent payments cannot be loaded', async () => {
+    document.body.innerHTML = '<div id="app-content"></div>';
+    container = document.getElementById('app-content');
+    listRecentPayments.mockResolvedValue({ data: null, error: { code: 'LOOKUP_FAILED', message: 'Could not load recent payments.' } });
+    container.innerHTML = refundScreen.render();
+    refundScreen.init(navigate);
+    await flush();
+    expect($('#refund-recent-msg').textContent).toBe('Could not load recent payments.');
+  });
+});
+
+describe('mapRefundError', () => {
+  it.each([
+    ['ALREADY_REFUNDED: payment x has already been refunded', 'This payment has already been refunded.'],
+    ['UNAUTHORIZED: caller is not an admin', 'Only an admin can issue refunds.'],
+    ['INVALID_REFUND_AMOUNT: too much', "That refund amount isn't valid for this payment."],
+    ['INVALID_PAYMENT_STATUS: p is Pending', "This payment isn't completed, so it can't be refunded."],
+  ])('maps "%s"', (raised, expected) => {
+    expect(mapRefundError({ message: raised }).message).toBe(expected);
+  });
+
+  it('never leaks raw database text for unknown errors', () => {
+    const result = mapRefundError({ message: 'duplicate key value violates unique constraint "x"' });
+    expect(result.code).toBe('REFUND_FAILED');
+    expect(result.message).not.toContain('duplicate');
   });
 });
