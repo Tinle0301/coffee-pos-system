@@ -655,3 +655,7 @@ button:active:not(:disabled) {
 .refund-summary dd { margin: 2px 0 0; font-weight: 600; }
 .refund-confirm { margin-top: 12px; padding: 12px; border: 1px solid var(--danger-color); border-radius: 10px; }
 .header-nav-btn { min-height: 44px; margin: 0 8px; }
+
+.refund-subtitle { margin: 16px 0 4px; font-size: 1rem; }
+.refund-recent-line { grid-template-columns: 1fr auto; align-items: center; }
+.refund-select-btn { min-height: 44px; }

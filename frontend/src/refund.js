@@ -1,6 +1,6 @@
 // refund.js — Admin: refund a completed payment in full or in part.
 // Flow: look up the payment → choose Full / Partial (+ amount) → review → confirm.
-import { lookUpPayment, submitRefund } from './refund-api.js';
+import { lookUpPayment, submitRefund, listRecentPayments } from './refund-api.js';
 
 function round2(amount) {
   return Math.round(amount * 100) / 100;
@@ -8,6 +8,11 @@ function round2(amount) {
 
 function formatPrice(amount) {
   return `$${amount.toFixed(2)}`;
+}
+
+// Order ids are long UUIDs; show the first 8 characters, like the Active Orders ticket number.
+function shortId(id) {
+  return String(id ?? '').slice(0, 8);
 }
 
 // Only a payment that actually went through can be refunded.
@@ -28,6 +33,11 @@ export const refundScreen = {
       <div class="screen-container refund-card">
         <h2>Refund a Payment</h2>
 
+        <h3 class="refund-subtitle">Recent payments</h3>
+        <ul id="refund-recent" class="order-list"></ul>
+        <p id="refund-recent-msg" class="refund-msg" role="status"></p>
+
+        <h3 class="refund-subtitle">Or look up by Payment ID</h3>
         <form id="refund-lookup-form" class="refund-row" novalidate>
           <label for="refund-payment-id">Payment ID</label>
           <input id="refund-payment-id" type="text" autocomplete="off" spellcheck="false" />
@@ -88,6 +98,8 @@ export const refundScreen = {
     const confirmText = $('refund-confirm-text');
     const confirmGo = $('refund-confirm-go');
     const result = $('refund-result');
+    const recentList = $('refund-recent');
+    const recentMsg = $('refund-recent-msg');
 
     let payment = null;
     let pending = null; // { type, amount } awaiting confirmation
@@ -99,6 +111,65 @@ export const refundScreen = {
       reviewBtn.hidden = false;
       pending = null;
       formMsg.textContent = '';
+    }
+
+    function showPayment(data) {
+      payment = data;
+      $('refund-method').textContent = data.paymentMethodType;
+      $('refund-paid').textContent = formatPrice(data.paymentAmountValue);
+      $('refund-status').textContent = data.paymentCompletionStatus;
+      $('refund-date').textContent = data.paymentProcessingTimestamp
+        ? new Date(data.paymentProcessingTimestamp).toLocaleString()
+        : '';
+      document.querySelector('input[name="refund-type"][value="Full"]').checked = true;
+      amountRow.hidden = true;
+      amountInput.value = '';
+      resetFlow();
+      details.hidden = false;
+      details.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    async function loadRecent() {
+      recentMsg.textContent = '';
+      const { data, error } = await listRecentPayments();
+      if (!document.body.contains(recentList)) return; // screen was left while loading
+      recentList.innerHTML = '';
+      if (error) {
+        recentMsg.textContent = error.message;
+        return;
+      }
+      const refundable = (data ?? []).filter(isRefundable);
+      if (!refundable.length) {
+        recentMsg.textContent = 'No completed payments to refund yet.';
+        return;
+      }
+      for (const p of refundable) {
+        const li = document.createElement('li');
+        li.className = 'order-line refund-recent-line';
+        const info = document.createElement('div');
+        const title = document.createElement('p');
+        title.className = 'order-line-name';
+        title.textContent = `Order #${shortId(p.associatedOrderIdentifier)} · ${formatPrice(p.paymentAmountValue)}`;
+        const meta = document.createElement('p');
+        meta.className = 'order-line-detail';
+        const when = p.paymentProcessingTimestamp
+          ? new Date(p.paymentProcessingTimestamp).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+          : '';
+        meta.textContent = [p.paymentMethodType, when].filter(Boolean).join(' · ');
+        info.append(title, meta);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'add-btn refund-select-btn';
+        btn.textContent = 'Refund';
+        btn.setAttribute('aria-label', `Refund order ${shortId(p.associatedOrderIdentifier)}`);
+        btn.addEventListener('click', () => {
+          lookupMsg.textContent = '';
+          result.textContent = '';
+          showPayment(p);
+        });
+        li.append(info, btn);
+        recentList.appendChild(li);
+      }
     }
 
     $('refund-back').addEventListener('click', () => navigate('new-order'));
@@ -137,18 +208,7 @@ export const refundScreen = {
         return;
       }
 
-      payment = data;
-      $('refund-method').textContent = data.paymentMethodType;
-      $('refund-paid').textContent = formatPrice(data.paymentAmountValue);
-      $('refund-status').textContent = data.paymentCompletionStatus;
-      $('refund-date').textContent = data.paymentProcessingTimestamp
-        ? new Date(data.paymentProcessingTimestamp).toLocaleString()
-        : '';
-      document.querySelector('input[name="refund-type"][value="Full"]').checked = true;
-      amountRow.hidden = true;
-      amountInput.value = '';
-      resetFlow();
-      details.hidden = false;
+      showPayment(data);
     });
 
     reviewBtn.addEventListener('click', () => {
@@ -197,7 +257,10 @@ export const refundScreen = {
       payment = null;
       pending = null;
       $('refund-payment-id').value = '';
+      loadRecent(); // that payment is now refunded, so it drops off the list
       result.textContent = `Refunded ${formatPrice(amount)} (${type.toLowerCase()}). Refund ID: ${data.refundTransactionIdentifier}`;
     });
+
+    loadRecent();
   },
 };
