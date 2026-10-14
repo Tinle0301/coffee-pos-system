@@ -21,6 +21,88 @@ create table menu_item_ingredients (
   )
 );
 
+-- POS-20: staff may read recipe mappings, but only admins may modify them.
+alter table menu_item_ingredients enable row level security;
+
+create policy menu_item_ingredients_staff_read
+  on menu_item_ingredients
+  for select
+  using (is_authenticated_staff());
+
+create policy menu_item_ingredients_admin_write
+  on menu_item_ingredients
+  for all
+  using (is_admin())
+  with check (is_admin());
+
+-- POS-20: base recipe mappings for the sample menu items.
+-- Look up the existing rows by name so the live migration does not depend
+-- on the UUIDs used by local seed data.
+
+insert into menu_item_ingredients (
+  menu_item_identifier,
+  inventory_item_identifier,
+  quantity_per_item_value
+)
+select
+  m.menu_item_identifier,
+  i.inventory_item_identifier,
+  0.04
+from menu_items m
+cross join inventory_items i
+where m.menu_item_name = 'Drip Coffee'
+  and i.inventory_item_name = 'Espresso Beans (lb)'
+on conflict (menu_item_identifier, inventory_item_identifier)
+do nothing;
+
+insert into menu_item_ingredients (
+  menu_item_identifier,
+  inventory_item_identifier,
+  quantity_per_item_value
+)
+select
+  m.menu_item_identifier,
+  i.inventory_item_identifier,
+  0.04
+from menu_items m
+cross join inventory_items i
+where m.menu_item_name = 'Latte'
+  and i.inventory_item_name = 'Espresso Beans (lb)'
+on conflict (menu_item_identifier, inventory_item_identifier)
+do nothing;
+
+insert into menu_item_ingredients (
+  menu_item_identifier,
+  inventory_item_identifier,
+  quantity_per_item_value
+)
+select
+  m.menu_item_identifier,
+  i.inventory_item_identifier,
+  0.10
+from menu_items m
+cross join inventory_items i
+where m.menu_item_name = 'Latte'
+  and i.inventory_item_name = 'Whole Milk (gal)'
+on conflict (menu_item_identifier, inventory_item_identifier)
+do nothing;
+
+insert into menu_item_ingredients (
+  menu_item_identifier,
+  inventory_item_identifier,
+  quantity_per_item_value
+)
+select
+  m.menu_item_identifier,
+  i.inventory_item_identifier,
+  1.00
+from menu_items m
+cross join inventory_items i
+where m.menu_item_name = 'Blueberry Muffin'
+  and i.inventory_item_name = 'Blueberry Muffins (each)'
+on conflict (menu_item_identifier, inventory_item_identifier)
+do nothing;
+
 -- Calculates the total inventory required for all items in one order.
 --
 -- Example:
@@ -57,6 +139,9 @@ as $$
     group by ingredients.inventory_item_identifier
   ) consumption;
 $$;
+
+-- Remove the obsolete three-argument checkout_order stub from 0003_functions.sql.
+drop function if exists checkout_order(uuid, text, numeric);
 
 -- Recreate checkout_order so an empty inventory_consumption array
 -- automatically uses the order's configured ingredient requirements.
