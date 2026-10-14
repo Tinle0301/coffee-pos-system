@@ -64,3 +64,22 @@ describe('POS-30: Mark an order In Progress or Completed from the queue', () => 
     expect(UpdateOrderStatus).toHaveBeenCalledWith('1042', 'Completed');
   });
 });
+
+describe('POS-26: Queue reads the queue service\'s real row shape', () => {
+  it('should show order numbers and the next step from queue_entries rows', async () => {
+    subscribeToQueue.mockReturnValue(vi.fn());
+    listActiveQueueEntries.mockResolvedValue({
+      data: [
+        { associatedOrderIdentifier: 'abcdef12-0000-0000-0000-000000000001', queueEntryStatusType: 'Pending' },
+        { associatedOrderIdentifier: '99999999-0000-0000-0000-000000000002', queueEntryStatusType: 'In Progress' }
+      ], error: null
+    });
+    await mount();
+
+    expect(orderNumbers()).toEqual(['Order #abcdef12', 'Order #99999999']);
+
+    document.querySelector('[data-order-id="abcdef12-0000-0000-0000-000000000001"]').click();
+    await flush();
+    expect(UpdateOrderStatus).toHaveBeenCalledWith('abcdef12-0000-0000-0000-000000000001', 'In Progress');
+  });
+});
