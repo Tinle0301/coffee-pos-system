@@ -1,4 +1,4 @@
-import { logout } from '../../backend/services/auth.js';
+import { logout } from './backend/auth.js';
 
 export const logoutComponent = {
   bindLogoutButton(buttonId) {

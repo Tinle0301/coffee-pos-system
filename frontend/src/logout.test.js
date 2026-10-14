@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { logoutComponent } from './logout.js';
-import * as authService from '../../backend/services/auth.js';
+import * as authService from './backend/auth.js';
 
 // Stub out global browser redirect layer
 const replaceMock = vi.fn();
@@ -10,7 +10,7 @@ Object.defineProperty(window, 'location', {
 });
 
 // Spy on service layers — matches the real auth.js contract: { data, error }
-vi.mock('../../backend/services/auth.js', () => ({
+vi.mock('./backend/auth.js', () => ({
   logout: vi.fn(() => Promise.resolve({ data: null, error: null }))
 }));
 
