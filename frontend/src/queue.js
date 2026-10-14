@@ -13,6 +13,23 @@ export const NEXT_STEP = {
 
 const FINISHED = ['Completed', 'Cancelled'];
 
+// The queue service returns queue_entries rows (associatedOrderIdentifier,
+// queueEntryStatusType, queueEntryTimestamp). Map them to the fields this
+// screen uses, and keep the older order-shaped fields working too.
+export function toQueueCard(entry) {
+  return {
+    orderIdentifier: entry.orderIdentifier ?? entry.associatedOrderIdentifier,
+    orderStatusType: entry.orderStatusType ?? entry.queueEntryStatusType,
+    orderCreationTimestamp: entry.orderCreationTimestamp ?? entry.queueEntryTimestamp,
+    items: entry.items,
+  };
+}
+
+// Order ids are long UUIDs; show the first 8 characters, like a ticket number.
+function shortId(id) {
+  return String(id ?? '').slice(0, 8);
+}
+
 // Services still being written return nothing; treat that as "not available".
 function normalize(result, what) {
   if (!result || typeof result !== 'object' || !('data' in result || 'error' in result)) {
@@ -41,7 +58,7 @@ export const queueScreen = {
 
     function renderEntries(entries) {
       list.innerHTML = '';
-      const active = entries.filter((entry) => !FINISHED.includes(entry.orderStatusType));
+      const active = entries.map(toQueueCard).filter((entry) => entry.orderIdentifier && !FINISHED.includes(entry.orderStatusType));
 
       if (!active.length) {
         list.innerHTML = '<li class="order-empty">No active orders.</li>';
@@ -55,7 +72,7 @@ export const queueScreen = {
         const info = document.createElement('div');
         const title = document.createElement('p');
         title.className = 'order-line-name';
-        title.textContent = `Order #${entry.orderIdentifier}`;
+        title.textContent = `Order #${shortId(entry.orderIdentifier)}`;
         const meta = document.createElement('p');
         meta.className = 'order-line-detail';
         const time = entry.orderCreationTimestamp
