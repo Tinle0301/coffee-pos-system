@@ -197,6 +197,19 @@ question.
   - price `< 0` -> `INVALID_MENU_ITEM`
   - id doesn't exist, or caller is not admin -> `MENU_ITEM_NOT_FOUND` (deliberately the same for both, same reasoning as `login`)
 
+### hideMenuItem
+- **Screen(s):** Menu Management
+- **Backend module:** `backend/services/menu.js`
+- **Input:**
+  - menuItemId: `string` (uuid)
+- **Returns:** the menu item, with `menuItemAvailabilityStatus: false` (same shape as `updateMenuItem`)
+- **Errors:**
+  - id doesn't exist, or caller is not admin -> `MENU_ITEM_NOT_FOUND`
+- **Note:** this is `updateMenuItem(menuItemId, { menuItemAvailabilityStatus: false })` — the Menu
+  Management screen's "remove" action. Use this, not `deleteMenuItem`: a menu item referenced by any
+  `order_items` row (i.e. ever ordered) can't be hard-deleted, since that foreign key has no `ON
+  DELETE` clause.
+
 ### deleteMenuItem
 - **Screen(s):** Menu Management
 - **Backend module:** `backend/services/menu.js`
@@ -205,6 +218,10 @@ question.
 - **Returns:** `null`
 - **Errors:**
   - id doesn't exist, or caller is not admin -> `MENU_ITEM_NOT_FOUND`
+  - menu item has order history -> fails with a raw foreign key violation,
+    not a clean `{ code, message }` — this function predates `hideMenuItem`
+    and isn't really safe to call on a real menu item; kept for the
+    original stub signature's sake
 
 ### processPayment
 - **Screen(s):** Checkout
