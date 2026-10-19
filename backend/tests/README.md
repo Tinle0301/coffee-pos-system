@@ -30,6 +30,13 @@ that before merge, not just via code review.
    orders can't, and who may cancel. Run it after all migrations. It also
    rolls back.
 
+   **RLS for staff, orders and order items (POS-40):**
+   `rls_staff_accounts_check.sql`, `rls_orders_check.sql` and
+   `rls_order_items_check.sql` sign in as a barista, a second barista, an
+   admin, a deactivated account and a signed-out user, and check what each
+   one can read and change. Run them after all migrations. They also roll
+   back.
+
 ## What to cover
 
 - A barista can read only their own `staff_accounts` row (not another
