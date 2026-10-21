@@ -300,15 +300,33 @@ question.
   - database lookup failure → `LOOKUP_FAILED`
 - **Authorization:** transaction logs are protected by RLS and are readable only by Admin users.
 
+### exportReportAsCsv
+- **Screen(s):** Admin Sales Report
+- **Backend module:** `backend/services/exports.js`
+- **Input:**
+  - reportId: `string` (uuid) — a `sales_reports.report_identifier`
+- **Returns:** `Blob` (`text/csv`) — **not** the `{ data, error }` shape. One
+  header row plus one data row (Report Type, Start Date, End Date, Total
+  Revenue, Generated At), matching the original stub's `Promise<Blob>`
+  signature. There's no form field to show an error next to on a file
+  download, so this throws on failure instead of returning `error`.
+- **Errors (thrown, not returned):**
+  - report doesn't exist, or caller is not admin -> `Error('Sales report not found.')`
+    (RLS filters a non-admin's query down to no row, same as a genuinely
+    missing id — same reasoning as `login`'s identical message for both
+    failure cases)
+  - database lookup failure -> `Error('Could not load the sales report.')`
+
 ---
 
 ## Implementation status (Sprint 3, in progress)
 
 Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`,
 `orders.js` (except `ModifyExistingOrder`), `orderItems.js` (POS-9),
-`payments.js` and `queue.js` (POS-19), `transactions.js` (POS-33), and the
-`create_order` (POS-8) and `checkout_order` (POS-18) database functions.
-Everything listed below is an empty stub.
+`payments.js` and `queue.js` (POS-19), `transactions.js` (POS-33),
+`exportReportAsCsv` in `exports.js` (POS-47), and the `create_order`
+(POS-8) and `checkout_order` (POS-18) database functions. Everything
+listed below is an empty stub.
 
 ## Remaining operations (signatures TBD as they're implemented)
 
@@ -322,7 +340,9 @@ format above. Placeholder list from `backend/services/`:
 - processRefund (`refunds.js`)
 - listInventoryItems, createInventoryItem, updateInventoryItem
   (`inventory.js`)
-- generateSalesReport, listSalesReports (`reports.js`)
+- generateSalesReport, listSalesReports (`reports.js`) — implemented on
+  POS-46's branch, not yet merged as of this PR
+- exportReportAsPdf (`exports.js`)
 - exportReportAsCsv, exportReportAsPdf (`exports.js`)
 - createStaffAccount, updateStaffAccount, deactivateStaffAccount,
   listStaffAccounts (`staff.js`)
