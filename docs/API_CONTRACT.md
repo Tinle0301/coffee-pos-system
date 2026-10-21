@@ -300,15 +300,49 @@ question.
   - database lookup failure → `LOOKUP_FAILED`
 - **Authorization:** transaction logs are protected by RLS and are readable only by Admin users.
 
+### generateSalesReport
+- **Screen(s):** Admin Sales Report
+- **Backend module:** `backend/services/reports.js`
+- **Input:**
+  - reportGenerationType: `'Daily' | 'Weekly' | 'Monthly'`
+  - startDate: `string` (`'YYYY-MM-DD'`)
+  - endDate: `string` (`'YYYY-MM-DD'`, inclusive)
+- **Returns:**
+  ```json
+  {
+    "reportIdentifier": "uuid",
+    "reportGenerationType": "Daily",
+    "reportStartDate": "2026-10-01",
+    "reportEndDate": "2026-10-01",
+    "totalRevenueAmount": 412.50,
+    "reportGeneratedTimestamp": "2026-10-02T03:00:00Z"
+  }
+  ```
+- **Errors:**
+  - `reportGenerationType` isn't one of the three allowed values -> `INVALID_REPORT_TYPE`
+  - dates aren't `YYYY-MM-DD`, or `startDate` is after `endDate` -> `INVALID_DATE_RANGE`
+  - caller is not admin -> `UNAUTHORIZED`
+- **Note:** `totalRevenueAmount` is **gross** revenue — the sum of `Completed`
+  payments processed within the date range. It is not net of refunds; see
+  the comment at the top of `reports.js` for why.
+
+### listSalesReports
+- **Screen(s):** Admin Sales Report
+- **Backend module:** `backend/services/reports.js`
+- **Input:** none
+- **Returns:** `Array<>` of the same shape as `generateSalesReport`, newest first
+- **Errors:** none beyond the generic `LOOKUP_FAILED`
+
 ---
 
 ## Implementation status (Sprint 3, in progress)
 
-Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`,
-`orders.js` (except `ModifyExistingOrder`), `orderItems.js` (POS-9),
-`payments.js` and `queue.js` (POS-19), `transactions.js` (POS-33), and the
-`create_order` (POS-8) and `checkout_order` (POS-18) database functions.
-Everything listed below is an empty stub.
+Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`
+(POS-45 adds `hideMenuItem`), `orders.js` (except `ModifyExistingOrder`),
+`orderItems.js` (POS-9), `payments.js` and `queue.js` (POS-19),
+`transactions.js` (POS-33), `reports.js` (POS-46), and the `create_order`
+(POS-8), `checkout_order` (POS-18/POS-39), and `process_refund` (POS-31)
+database functions. Everything listed below is an empty stub.
 
 ## Remaining operations (signatures TBD as they're implemented)
 
@@ -319,10 +353,10 @@ format above. Placeholder list from `backend/services/`:
   in `orders.js` for why (item-level and status changes already have
   homes elsewhere, order-level "changes" doesn't have settled semantics)
 - MarkOrderAsInProgress (`orderStatus.js`)
-- processRefund (`refunds.js`)
+- processRefund (`refunds.js`) — the `process_refund` database function
+  (POS-31) is done; this JS wrapper around it isn't
 - listInventoryItems, createInventoryItem, updateInventoryItem
   (`inventory.js`)
-- generateSalesReport, listSalesReports (`reports.js`)
 - exportReportAsCsv, exportReportAsPdf (`exports.js`)
 - createStaffAccount, updateStaffAccount, deactivateStaffAccount,
   listStaffAccounts (`staff.js`)
