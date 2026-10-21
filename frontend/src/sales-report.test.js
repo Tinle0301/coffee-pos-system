@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { salesReportScreen, weekRange } from './sales-report.js';
 import { generateSalesReport } from './backend/services/reports.js';
 import { exportReportAsCsv } from './backend/services/exports.js';
@@ -50,6 +50,10 @@ beforeEach(() => {
     document.body.innerHTML = '';
 });
 
+afterEach(() => {
+    vi.restoreAllMocks();
+});
+
 describe('POS-53: Sales Report Screen', () => {
     it('calculates the Monday-Sunday range for a week', () => {
         expect(weekRange('2026-10-12')).toEqual({
@@ -85,6 +89,7 @@ describe('POS-54: Sales Report Screen - Export', () => {
         });
         URL.createObjectURL = vi.fn(() => 'blob:test');
         URL.revokeObjectURL = vi.fn();
+        vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
         mount();
         await runReport('2026-10-12', 'Daily');
