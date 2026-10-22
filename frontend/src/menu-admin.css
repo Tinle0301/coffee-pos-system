@@ -69,3 +69,31 @@
 @media (prefers-reduced-motion: reduce) {
   .menu-admin-row, .menu-admin .menu-toggle, .menu-toggle-knob { transition: none; }
 }
+
+/* ---- heading + Edit button + add/edit form ---- */
+.menu-admin-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.menu-admin-heading h2 { margin: 0; }
+.menu-admin-heading button { min-height: 44px; }
+.menu-admin .menu-edit-btn { flex: none; min-height: 44px; min-width: 64px; margin: 0; }
+
+.menu-form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.menu-form-field label { font-weight: 600; color: var(--text-muted); }
+.menu-form-field input,
+.menu-form-field select {
+  min-height: 44px;
+  padding: 0 12px;
+  font: inherit;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--disabled-color);
+  border-radius: 8px;
+}
+.menu-form-field input:focus-visible,
+.menu-form-field select:focus-visible { outline: 3px solid var(--accent-color); outline-offset: 1px; }
+.menu-form-error { min-height: 1.2em; margin: 0; font-size: 0.85rem; color: var(--danger-color); }
+#menu-form > .menu-form-error { margin-bottom: 10px; }
+
+@media (max-width: 520px) {
+  .menu-admin-row { flex-wrap: wrap; }
+  .menu-admin-info { flex-basis: 100%; }
+}
