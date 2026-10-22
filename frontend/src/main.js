@@ -9,6 +9,7 @@ import { session } from './backend/auth.js';
 import { paymentScreen } from './payment.js';
 import { queueScreen } from './queue.js';
 import { adminHomeScreen } from './admin-home.js';
+import { inventoryScreen } from './inventory.js';
 
 // Global application memory state — staffId starts null
 const state = {
@@ -26,12 +27,13 @@ const routes = {
   refund: refundScreen,
   payment: paymentScreen,
   queue: queueScreen,
-  admin: adminHomeScreen
+  admin: adminHomeScreen,
+  inventory: inventoryScreen
 };
 
 // Screens only an Admin may open. Hiding a button isn't security (RLS is),
 // but don't draw an admin screen to a barista.
-const ADMIN_ONLY = new Set(['admin', 'refund', 'menu']);
+const ADMIN_ONLY = new Set(['admin', 'refund', 'menu', 'inventory']);
 
 const appRoot = document.querySelector('#app');
 let contentRoot;

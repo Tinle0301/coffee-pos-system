@@ -21,7 +21,7 @@ export const ADMIN_SECTIONS = [
     heading: 'Store',
     tiles: [
       { route: 'menu', title: 'Menu Management', description: 'Review menu items, prices and availability.' },
-      { route: null, title: 'Inventory', description: 'Track ingredient stock levels.' },
+      { route: 'inventory', title: 'Inventory', description: 'See stock levels, with low items highlighted.' },
     ],
   },
   {
