@@ -1,0 +1,60 @@
+/* inventory.css — styles for the admin Inventory screen only. */
+.inventory { max-width: 760px; margin: 0 auto; }
+.inventory-top { margin-bottom: 8px; }
+.inventory-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.inventory-heading h2 { margin: 0; }
+.inventory-heading button { min-height: 44px; margin: 0; }
+
+.inventory-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
+.inventory-count {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 84px; padding: 10px; border-radius: 12px;
+  border: 1px solid var(--disabled-color); background: var(--bg-surface);
+}
+.inventory-count-num { font-family: var(--font-display); font-size: 2rem; font-weight: 700; line-height: 1; }
+.inventory-count-label { margin-top: 4px; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-align: center; }
+.inventory-count--out { border-color: var(--danger-color); background: rgba(176, 70, 58, 0.1); }
+.inventory-count--out .inventory-count-num { color: var(--danger-color); }
+.inventory-count--low { border-color: var(--accent-color); background: rgba(192, 138, 46, 0.14); }
+.inventory-count--low .inventory-count-num { color: var(--accent-hover); }
+.inventory-count--ok .inventory-count-num { color: var(--success-color); }
+.inventory-count.is-zero { background: var(--bg-surface); border-color: var(--disabled-color); }
+.inventory-count.is-zero .inventory-count-num { color: var(--text-muted); }
+
+.inventory-filters { display: flex; gap: 8px; margin-bottom: 14px; }
+.inventory .inventory-filter {
+  min-height: 44px; margin: 0; padding: 0 16px; font: inherit; font-weight: 600;
+  color: var(--text-main); background: var(--bg-surface);
+  border: 1px solid var(--disabled-color); border-radius: 999px; cursor: pointer;
+}
+.inventory .inventory-filter.is-active { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+.inventory .inventory-filter:focus-visible { outline: 3px solid var(--accent-color); outline-offset: 2px; }
+
+.inventory-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.inventory-row {
+  padding: 14px 16px; background: var(--bg-surface);
+  border: 1px solid var(--disabled-color); border-left: 6px solid var(--success-color);
+  border-radius: 12px; animation: inventory-in 0.25s ease both;
+}
+.inventory-row--low { border-left-color: var(--accent-color); background: rgba(192, 138, 46, 0.07); }
+.inventory-row--out { border-left-color: var(--danger-color); background: rgba(176, 70, 58, 0.07); }
+.inventory-row-main { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.inventory-name { font-weight: 700; font-size: 1.05rem; }
+.inventory-badge {
+  padding: 3px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 0.03em; text-transform: uppercase;
+  color: var(--success-color); background: rgba(92, 122, 94, 0.14);
+}
+.inventory-badge--low { color: var(--accent-hover); background: rgba(192, 138, 46, 0.22); }
+.inventory-badge--out { color: #fff; background: var(--danger-color); }
+.inventory-row-detail { display: flex; gap: 6px 18px; flex-wrap: wrap; margin-top: 6px; color: var(--text-muted); font-size: 0.9rem; }
+.inventory-qty strong { color: var(--text-main); font-size: 1.05rem; }
+.inventory-bar { height: 8px; margin-top: 10px; background: var(--disabled-color); border-radius: 999px; overflow: hidden; }
+.inventory-bar span { display: block; height: 100%; border-radius: 999px; background: var(--success-color); }
+.inventory-row--low .inventory-bar span { background: var(--accent-color); }
+.inventory-row--out .inventory-bar span { background: var(--danger-color); }
+.inventory-allgood { padding: 20px; text-align: center; color: var(--success-color); font-weight: 600; }
+
+@keyframes inventory-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 520px) { .inventory-count-num { font-size: 1.6rem; } }
+@media (prefers-reduced-motion: reduce) { .inventory-row { animation: none; } }
