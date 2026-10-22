@@ -136,7 +136,8 @@ export const newOrderScreen = {
 
     function renderRows() {
       menuRows.innerHTML = '';
-      for (const item of allItems.filter((i) => i.menuItemCategoryType === activeCategory)) {
+      // Sold-out items (switched off on the admin Menu screen) disappear entirely.
+      for (const item of allItems.filter((i) => i.menuItemAvailabilityStatus && i.menuItemCategoryType === activeCategory)) {
         const tr = document.createElement('tr');
         if (!item.menuItemAvailabilityStatus) tr.classList.add('menu-row-unavailable');
 
@@ -364,7 +365,9 @@ export const newOrderScreen = {
       return;
     }
     allItems = data;
-    const categories = [...new Set(allItems.map((i) => i.menuItemCategoryType))];
+    // allItems keeps unavailable items so an order line can still be edited;
+    // only available ones are shown as tabs and rows.
+    const categories = [...new Set(allItems.filter((i) => i.menuItemAvailabilityStatus).map((i) => i.menuItemCategoryType))];
     activeCategory = categories[0];
     renderTabs(categories);
     renderRows();
