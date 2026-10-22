@@ -4,10 +4,10 @@
 
 export const ADMIN_SECTIONS = [
   {
-    heading: 'Operations',
+    heading: 'Barista screens',
     tiles: [
+      { route: 'new-order', title: 'New Order', description: 'Ring up a customer order, the same screen baristas use.' },
       { route: 'queue', title: 'Active Orders', description: 'See what the bar is making and mark orders In Progress or Completed.' },
-      { route: 'new-order', title: 'New Order', description: 'Ring up a customer order.' },
     ],
   },
   {
