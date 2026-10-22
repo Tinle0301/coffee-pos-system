@@ -60,19 +60,17 @@ describe('newOrderScreen', () => {
   it('marks the first tab active and switches the menu rows when another tab is clicked', async () => {
     await mount();
     expect($('.category-tab.active').textContent).toBe('Espresso');
-    expect([...container.querySelectorAll('.menu-row-name')].map((el) => el.textContent)).toEqual(['Latte', 'Cortado']);
+    expect([...container.querySelectorAll('.menu-row-name')].map((el) => el.textContent)).toEqual(['Latte']);
 
     openTab('Bakery');
     expect($('.category-tab.active').textContent).toBe('Bakery');
     expect([...container.querySelectorAll('.menu-row-name')].map((el) => el.textContent)).toEqual(['Croissant']);
   });
 
-  it('disables the Add button for unavailable items and shows "Unavailable" instead of a price', async () => {
+  it('hides unavailable items completely so sold-out drinks cannot be ordered', async () => {
     await mount();
-    const cortadoRow = addButtonFor('Cortado').closest('tr');
-    expect(addButtonFor('Cortado').disabled).toBe(true);
-    expect(cortadoRow.classList.contains('menu-row-unavailable')).toBe(true);
-    expect(cortadoRow.querySelector('.menu-row-price').textContent).toBe('Unavailable');
+    const names = [...container.querySelectorAll('.menu-row-name')].map((el) => el.textContent);
+    expect(names).not.toContain('Cortado');
     expect(addButtonFor('Latte').disabled).toBe(false);
   });
 
