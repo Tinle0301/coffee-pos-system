@@ -197,6 +197,19 @@ question.
   - price `< 0` -> `INVALID_MENU_ITEM`
   - id doesn't exist, or caller is not admin -> `MENU_ITEM_NOT_FOUND` (deliberately the same for both, same reasoning as `login`)
 
+### hideMenuItem
+- **Screen(s):** Menu Management
+- **Backend module:** `backend/services/menu.js`
+- **Input:**
+  - menuItemId: `string` (uuid)
+- **Returns:** the menu item, with `menuItemAvailabilityStatus: false` (same shape as `updateMenuItem`)
+- **Errors:**
+  - id doesn't exist, or caller is not admin -> `MENU_ITEM_NOT_FOUND`
+- **Note:** this is `updateMenuItem(menuItemId, { menuItemAvailabilityStatus: false })` — the Menu
+  Management screen's "remove" action. Use this, not `deleteMenuItem`: a menu item referenced by any
+  `order_items` row (i.e. ever ordered) can't be hard-deleted, since that foreign key has no `ON
+  DELETE` clause.
+
 ### deleteMenuItem
 - **Screen(s):** Menu Management
 - **Backend module:** `backend/services/menu.js`
@@ -205,6 +218,10 @@ question.
 - **Returns:** `null`
 - **Errors:**
   - id doesn't exist, or caller is not admin -> `MENU_ITEM_NOT_FOUND`
+  - menu item has order history -> fails with a raw foreign key violation,
+    not a clean `{ code, message }` — this function predates `hideMenuItem`
+    and isn't really safe to call on a real menu item; kept for the
+    original stub signature's sake
 
 ### processPayment
 - **Screen(s):** Checkout
@@ -231,10 +248,8 @@ question.
   - `paymentMethod` isn't one of the three allowed values -> `INVALID_PAYMENT_METHOD`
   - `amount` doesn't match the order's total -> `AMOUNT_MISMATCH`
   - caller is not an authenticated barista/admin -> `UNAUTHORIZED`
-- **Known gap:** this always checks out with zero inventory decremented —
-  there's no menu-item-to-inventory-item mapping anywhere in the schema yet
-  (see the comment at the top of `payments.js`), so stock levels will not
-  reflect real consumption until that mapping exists.
+- **Inventory:** checkout automatically calculates and deducts inventory
+  consumption using the configured menu-item ingredient mappings (POS-20).
 
 ### getPayment
 - **Screen(s):** Checkout, order history (wherever a payment needs to be looked up)
@@ -265,15 +280,35 @@ question.
   completed or cancelled order leaving the queue) and an `INSERT`/`UPDATE`
   are otherwise indistinguishable from the row shape alone.
 
+### listTransactionLogs
+
+- **Screen(s):** Admin Transaction Log
+- **Backend module:** `backend/services/transactions.js`
+- **Input:**
+  - `filters`: optional object
+    - `orderId?: string` — filters by `associated_order_identifier`
+    - `from?: string` — inclusive lower bound for `transaction_timestamp`
+    - `to?: string` — inclusive upper bound for `transaction_timestamp`
+- **Returns:** transaction log entries ordered newest first
+- **Returned fields:**
+  - `transactionLogIdentifier`
+  - `associatedOrderIdentifier`
+  - `transactionTypeCategory`
+  - `transactionTimestamp`
+  - `performedByStaffIdentifier`
+- **Errors:**
+  - database lookup failure → `LOOKUP_FAILED`
+- **Authorization:** transaction logs are protected by RLS and are readable only by Admin users.
+
 ---
 
-## Implementation status (end of Sprint 2, in progress)
+## Implementation status (Sprint 3, in progress)
 
 Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`,
 `orders.js` (except `ModifyExistingOrder`), `orderItems.js` (POS-9),
-`payments.js` and `queue.js` (POS-19), and the `create_order` (POS-8) and
-`checkout_order` (POS-18) database functions. Everything listed below is
-an empty stub.
+`payments.js` and `queue.js` (POS-19), `transactions.js` (POS-33), and the
+`create_order` (POS-8) and `checkout_order` (POS-18) database functions.
+Everything listed below is an empty stub.
 
 ## Remaining operations (signatures TBD as they're implemented)
 
@@ -285,7 +320,6 @@ format above. Placeholder list from `backend/services/`:
   homes elsewhere, order-level "changes" doesn't have settled semantics)
 - MarkOrderAsInProgress (`orderStatus.js`)
 - processRefund (`refunds.js`)
-- listTransactionLogs (`transactions.js`)
 - listInventoryItems, createInventoryItem, updateInventoryItem
   (`inventory.js`)
 - generateSalesReport, listSalesReports (`reports.js`)

@@ -96,6 +96,26 @@ export async function updateMenuItem(menuItemId, updates) {
 }
 
 /**
+ * POS-45: the Menu Management screen's "remove" action — sets availability
+ * to false rather than deleting the row. A menu item that's ever been
+ * ordered is referenced by order_items (no ON DELETE on that FK), so a
+ * hard delete on a real menu item fails once it has order history — hiding
+ * it is what actually works, and it's also how past orders keep showing
+ * the right item name instead of a dangling reference.
+ *
+ * @param {string} menuItemId
+ * @returns {Promise<{ data: import('../models/menuItem.js').MenuItem | null, error: ServiceError | null }>}
+ */
+export async function hideMenuItem(menuItemId) {
+  return await updateMenuItem(menuItemId, { menuItemAvailabilityStatus: false });
+}
+
+/**
+ * Hard delete. Kept for completeness with the original stub signature, but
+ * see hideMenuItem's comment above — this fails with a foreign key error
+ * for any menu item that has ever been ordered, which in practice is most
+ * of them. Prefer hideMenuItem for the Menu Management screen.
+ *
  * @param {string} menuItemId
  * @returns {Promise<{ data: null, error: ServiceError | null }>}
  */
