@@ -37,6 +37,14 @@ that before merge, not just via code review.
    one can read and change. Run them after all migrations. They also roll
    back.
 
+   **RLS for refunds, sales reports, logs and signed-out users (POS-41):**
+   `rls_refunds_check.sql`, `rls_sales_reports_check.sql` and
+   `rls_transaction_logs_check.sql` check that only active admins can read
+   this data, and that nobody can edit or delete a log entry.
+   `rls_signed_out_check.sql` checks that a signed-out caller (the public
+   key in the browser) can't read or write any table or run any database
+   function. Run them after all migrations. They also roll back.
+
 ## What to cover
 
 - A barista can read only their own `staff_accounts` row (not another
