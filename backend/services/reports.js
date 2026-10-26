@@ -5,16 +5,20 @@
 // non-admin caller gets rejected at the database and these functions just
 // shape the error.
 //
-// total_revenue_amount is gross revenue: the sum of Completed payments
-// whose payment_processing_timestamp falls in [startDate, endDate]
-// (inclusive, by calendar day). It is NOT net of refunds — refunds aren't
-// subtracted here. Two reasons: sales_reports.total_revenue_amount has a
-// `>= 0` check constraint, and a refund can be processed in a later window
-// than the payment it refunds, so netting them against "revenue for this
-// date range" would make a report's number depend on when someone chose to
-// run it, not just on what happened in the range. If net-of-refunds
-// reporting is wanted, it should probably be its own figure alongside this
-// one, not a silent subtraction.
+// total_revenue_amount is gross revenue: the sum of Completed and Refunded
+// payments whose payment_processing_timestamp falls in [startDate, endDate]
+// (inclusive, by calendar day). Refunded payments are included because a
+// refund (even a partial one) flips the whole payment's status to
+// 'Refunded', so excluding that status would drop the original sale out of
+// revenue entirely instead of just netting the refunded part. This total is
+// NOT net of refunds — the refunded amount isn't subtracted here. Two
+// reasons: sales_reports.total_revenue_amount has a `>= 0` check constraint,
+// and a refund can be processed in a later window than the payment it
+// refunds, so netting them against "revenue for this date range" would make
+// a report's number depend on when someone chose to run it, not just on
+// what happened in the range. If net-of-refunds reporting is wanted, it
+// should probably be its own figure alongside this one, not a silent
+// subtraction.
 
 import { supabase } from '../supabase-client.js';
 
@@ -45,13 +49,13 @@ export async function generateSalesReport(reportGenerationType, startDate, endDa
     return { data: null, error: { code: 'INVALID_DATE_RANGE', message: 'startDate must not be after endDate.' } };
   }
 
-  const rangeStart = `${startDate}T00:00:00.000Z`;
+  const rangeStart = new Date(`${startDate}T00:00:00`).toISOString();
   const rangeEndExclusive = nextDayIso(endDate);
 
   const { data: payments, error: paymentsError } = await supabase
     .from('payments')
     .select('payment_amount_value')
-    .eq('payment_completion_status', 'Completed')
+    .in('payment_completion_status', ['Completed', 'Refunded'])
     .gte('payment_processing_timestamp', rangeStart)
     .lt('payment_processing_timestamp', rangeEndExclusive);
 
@@ -100,8 +104,8 @@ function round2(amount) {
 }
 
 function nextDayIso(dateStr) {
-  const date = new Date(`${dateStr}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() + 1);
+  const date = new Date(`${dateStr}T00:00:00`);
+  date.setDate(date.getDate() + 1);
   return date.toISOString();
 }
 
