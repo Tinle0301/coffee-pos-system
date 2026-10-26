@@ -10,10 +10,23 @@ that before merge, not just via code review.
 2. Start a local Supabase instance: `supabase start`.
 3. Apply migrations: `supabase db reset` (applies everything in
    `../migrations/` in order, then `../seed/seed.sql`).
-4. Run the test suite: *not written yet — the RLS suite is planned for
-   Sprint 3 (e.g. `pgTAP` via `supabase test db`, or a JS suite hitting the
-   local Supabase REST API with test JWTs for a barista and an admin).
-   Frontend unit tests already exist: `npx vitest run` in `frontend/src/`.*
+4. Run every check file at once (POS-42), against an **empty** Postgres
+   database (never the live project):
+
+   ```bash
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres" bash scripts/run-sql-checks.sh
+   ```
+
+   It checks that `backend/migrations/` and `supabase/migrations/` hold the
+   same SQL, builds the database from the migrations (with
+   `scripts/ci-supabase-stubs.sql` standing in for Supabase's auth schema
+   and roles), loads the seed data, then runs every `*.sql` file in this
+   folder. CI runs the same script on every PR that touches `backend/`,
+   `supabase/` or `scripts/`, so a failing check fails the PR. A new check
+   file is picked up automatically; it just has to raise an error on
+   failure, like the files below.
+
+   Frontend unit tests: `npx vitest run` in `frontend/src/`.
 
    **Payment and log security (POS-16):** `payment_security_check.sql` checks
    that payments and transaction logs cannot be altered. Run it after
