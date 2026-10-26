@@ -1,0 +1,143 @@
+/* admin-home.css — styles for the Admin Home screen only.
+   Everything is scoped under .admin-home and uses the shared colour tokens from
+   style.css, so a theme change there carries through. */
+
+.admin-home {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 8px 16px 40px;
+}
+
+.admin-home-hero {
+  padding: 8px 0 20px;
+  border-bottom: 2px solid var(--accent-color);
+  margin-bottom: 8px;
+}
+.admin-home-hero h2 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--text-main);
+}
+.admin-home-hero p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.admin-home-group { margin-top: 24px; }
+.admin-home-group-title {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.admin-home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+/* ---- tile ---- */
+.admin-home .admin-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  min-height: 112px;           /* comfortable touch target */
+  margin: 0;
+  padding: 16px 18px 40px;
+  text-align: left;
+  font: inherit;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--disabled-color);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(43, 27, 18, 0.06);
+  cursor: pointer;
+  animation: admin-tile-in 0.35s ease both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.admin-home .admin-tile:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--accent-color);
+  box-shadow: 0 8px 18px rgba(43, 27, 18, 0.12);
+}
+.admin-home .admin-tile:focus-visible {
+  outline: 3px solid var(--accent-color);
+  outline-offset: 2px;
+}
+.admin-home .admin-tile:active:not(:disabled) { transform: scale(0.98); }
+
+.admin-tile-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.admin-tile-desc {
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+.admin-tile-go {
+  position: absolute;
+  left: 18px;
+  bottom: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-hover);
+}
+.admin-tile:hover:not(:disabled) .admin-tile-go { text-decoration: underline; }
+
+/* not built yet: visible but clearly inactive */
+.admin-home .admin-tile--soon {
+  cursor: not-allowed;
+  background: var(--bg-panel);
+  border-style: dashed;
+  box-shadow: none;
+}
+.admin-home .admin-tile--soon .admin-tile-title,
+.admin-home .admin-tile--soon .admin-tile-desc { opacity: 0.65; }
+.admin-tile-badge {
+  position: absolute;
+  left: 18px;
+  bottom: 12px;
+  padding: 2px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--disabled-color);
+  border-radius: 999px;
+}
+
+.admin-home-denied {
+  margin: 40px auto;
+  max-width: 420px;
+  padding: 24px;
+  text-align: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--danger-color);
+  border-radius: 14px;
+}
+.admin-home-denied h2 { margin: 0 0 6px; color: var(--danger-color); }
+
+@keyframes admin-tile-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .admin-home { padding: 8px 12px 32px; }
+  .admin-home-grid { grid-template-columns: 1fr; }
+  .admin-home-hero h2 { font-size: 1.6rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-home .admin-tile { animation: none; transition: none; }
+}
