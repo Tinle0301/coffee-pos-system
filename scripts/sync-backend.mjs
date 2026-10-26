@@ -34,6 +34,8 @@ const FILES = [
   ['services/queue.js', 'services/queue.js'],
   ['services/orderStatus.js', 'services/orderStatus.js'],
   ['services/transactions.js', 'services/transactions.js'],
+  ['services/reports.js', 'services/reports.js'],
+  ['services/exports.js', 'services/exports.js'],
 ];
 
 const check = process.argv.includes('--check');
