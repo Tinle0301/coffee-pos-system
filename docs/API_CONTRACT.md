@@ -333,6 +333,38 @@ question.
 - **Returns:** `Array<>` of the same shape as `generateSalesReport`, newest first
 - **Errors:** none beyond the generic `LOOKUP_FAILED`
 
+### listStaffAccounts
+- **Screen(s):** Admin Staff screen
+- **Backend module:** `backend/services/staff.js`
+- **Input:** none
+- **Returns:** staff accounts sorted by name: `staffAccountIdentifier`,
+  `staffFullName`, `staffRoleType`, `staffEmailAddress`,
+  `staffAccountStatus`, `accountCreationTimestamp`. Admins see everyone;
+  anyone else only sees their own row (RLS).
+- **Errors:** `LOOKUP_FAILED`
+
+### updateStaffAccount / deactivateStaffAccount / reactivateStaffAccount
+- **Screen(s):** Admin Staff screen
+- **Backend module:** `backend/services/staff.js`, calling the
+  `set_staff_role` and `set_staff_active` database functions (POS-43)
+- **Input:** `updateStaffAccount(staffAccountIdentifier, { staffFullName?, staffRoleType?, staffAccountStatus? })`;
+  `deactivateStaffAccount(id)` and `reactivateStaffAccount(id)` are shortcuts
+  for `staffAccountStatus: false / true`
+- **Returns:** the updated staff account (same fields as above)
+- **Errors:**
+  - caller is not an active admin -> `UNAUTHORIZED`
+  - changing your own role or deactivating yourself -> `SELF_CHANGE`
+    (this is what keeps at least one admin in the shop)
+  - role isn't `Barista` or `Admin` -> `INVALID_ROLE`
+  - unknown staff id -> `STAFF_NOT_FOUND`
+  - empty name -> `INVALID_NAME`; no changes given -> `NOTHING_TO_UPDATE`
+  - anything else -> `UPDATE_FAILED`
+
+### createStaffAccount
+- Always returns `NOT_SUPPORTED`. Creating a login needs the Supabase
+  secret key, which must never be in the browser, so new staff are added in
+  the Supabase dashboard (`docs/SETUP.md`, "Adding a staff member").
+
 ---
 
 ## Implementation status (Sprint 3, in progress)
@@ -340,7 +372,8 @@ question.
 Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`
 (POS-45 adds `hideMenuItem`), `orders.js` (except `ModifyExistingOrder`),
 `orderItems.js` (POS-9), `payments.js` and `queue.js` (POS-19),
-`transactions.js` (POS-33), `reports.js` (POS-46), and the `create_order`
+`transactions.js` (POS-33), `reports.js` (POS-46), `staff.js` (POS-43),
+and the `create_order`
 (POS-8), `checkout_order` (POS-18/POS-39), and `process_refund` (POS-31)
 database functions. Everything listed below is an empty stub.
 
@@ -358,8 +391,6 @@ format above. Placeholder list from `backend/services/`:
 - listInventoryItems, createInventoryItem, updateInventoryItem
   (`inventory.js`)
 - exportReportAsCsv, exportReportAsPdf (`exports.js`)
-- createStaffAccount, updateStaffAccount, deactivateStaffAccount,
-  listStaffAccounts (`staff.js`)
 
 ---
 
