@@ -8,14 +8,8 @@ import { session } from './backend/auth.js';
 
 import { paymentScreen } from './payment.js';
 import { queueScreen } from './queue.js';
-<<<<<<< HEAD
-import { salesReportScreen } from './sales-report.js';
-import { staffManagerScreen } from './staff-manager.js';
-import { transactionLogScreen } from './transaction-log.js';
-=======
 import { adminHomeScreen } from './admin-home.js';
 import { inventoryScreen } from './inventory.js';
->>>>>>> c25f1ee84c44d6dd6e40ed39b382c798d47f2193
 
 // Global application memory state — staffId starts null
 const state = {
