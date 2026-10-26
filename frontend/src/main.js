@@ -27,6 +27,15 @@ const routes = {
   refund: refundScreen,
   payment: paymentScreen,
   queue: queueScreen,
+<<<<<<< HEAD
+  'sales-report': salesReportScreen,
+  staff: staffManagerScreen,
+  transactions: transactionLogScreen
+};
+
+// Screens only an Admin may open (RLS still enforces this on the server).
+const ADMIN_ONLY = ['refund', 'sales-report', 'staff', 'transactions'];
+=======
   admin: adminHomeScreen,
   inventory: inventoryScreen
 };
@@ -34,6 +43,7 @@ const routes = {
 // Screens only an Admin may open. Hiding a button isn't security (RLS is),
 // but don't draw an admin screen to a barista.
 const ADMIN_ONLY = new Set(['admin', 'refund', 'menu', 'inventory']);
+>>>>>>> c25f1ee84c44d6dd6e40ed39b382c798d47f2193
 
 const appRoot = document.querySelector('#app');
 let contentRoot;
@@ -46,7 +56,14 @@ function renderAuthenticatedShell(staffName, isAdmin = false) {
       <header class="app-header">
         <span class="app-header-title">Coffee POS</span>
         <span class="app-header-employee">${staffName || ''}</span>
+<<<<<<< HEAD
+        ${isAdmin ? '<button id="header-refunds-btn" class="header-nav-btn">Refunds</button>' : ''}
+        ${isAdmin ? '<button id="header-reports-btn" class="header-nav-btn">Reports</button>' : ''}
+        ${isAdmin ? '<button id="header-staff-btn" class="header-nav-btn">Staff</button>' : ''}
+        ${isAdmin ? '<button id="header-logs-btn" class="header-nav-btn">Logs</button>' : ''}
+=======
         ${isAdmin ? '<button id="header-admin-home-btn" class="header-nav-btn">Admin Home</button>' : ''}
+>>>>>>> c25f1ee84c44d6dd6e40ed39b382c798d47f2193
         <button id="header-active-orders-btn" class="header-nav-btn">Active Orders</button>
         <button id="global-logout-btn">Log Out</button>
       </header>
@@ -55,9 +72,18 @@ function renderAuthenticatedShell(staffName, isAdmin = false) {
   `;
   logoutComponent.bindLogoutButton('global-logout-btn');
   contentRoot = document.querySelector('#app-content');
+<<<<<<< HEAD
+  const refundsBtn = document.getElementById('header-refunds-btn');
+  if (refundsBtn) refundsBtn.addEventListener('click', () => navigate('refund'));
+  document.getElementById('header-reports-btn')?.addEventListener('click', () => navigate('sales-report'));
+  document.getElementById('header-staff-btn')?.addEventListener('click', () => navigate('staff'));
+  document.getElementById('header-logs-btn')?.addEventListener('click', () => navigate('transactions'));
+    const activeOrdersBtn = document.getElementById('header-active-orders-btn');
+=======
   const adminHomeBtn = document.getElementById('header-admin-home-btn');
   if (adminHomeBtn) adminHomeBtn.addEventListener('click', () => navigate('admin'));
   const activeOrdersBtn = document.getElementById('header-active-orders-btn');
+>>>>>>> c25f1ee84c44d6dd6e40ed39b382c798d47f2193
   if (activeOrdersBtn) {
     activeOrdersBtn.addEventListener('click', () => navigate('queue'));
   }
@@ -71,7 +97,12 @@ function renderLoginShell() {
 export function navigate(screenName) {
   const targetScreen = routes[screenName];
   if (!targetScreen) return;
+<<<<<<< HEAD
+  // Hiding the button isn't security (RLS is), but don't draw an admin screen to a barista.
+  if (ADMIN_ONLY.includes(screenName) && state.staffRole !== 'Admin') return;
+=======
   if (ADMIN_ONLY.has(screenName) && state.staffRole !== 'Admin') return;
+>>>>>>> c25f1ee84c44d6dd6e40ed39b382c798d47f2193
 
   // 1. Clear layout and inject fresh layout template string
   contentRoot.innerHTML = targetScreen.render(state);
