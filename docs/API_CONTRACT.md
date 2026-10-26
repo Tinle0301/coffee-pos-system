@@ -343,7 +343,6 @@ format above. Placeholder list from `backend/services/`:
 - generateSalesReport, listSalesReports (`reports.js`) — implemented on
   POS-46's branch, not yet merged as of this PR
 - exportReportAsPdf (`exports.js`)
-- exportReportAsCsv, exportReportAsPdf (`exports.js`)
 - createStaffAccount, updateStaffAccount, deactivateStaffAccount,
   listStaffAccounts (`staff.js`)
 
