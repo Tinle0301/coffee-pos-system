@@ -1,0 +1,99 @@
+/* menu-admin.css — styles for the admin Menu Management screen only. */
+.menu-admin { max-width: 760px; margin: 0 auto; }
+.menu-admin-top { margin-bottom: 8px; }
+.menu-admin-hint { margin: 4px 0 12px; color: var(--text-muted); }
+.menu-admin-summary { margin: 0 0 4px; font-weight: 700; }
+.menu-admin-message { min-height: 1.4em; margin: 0 0 8px; color: var(--success-color); }
+.menu-admin-message.is-error { color: var(--danger-color); }
+
+.menu-admin-category { margin-top: 20px; }
+.menu-admin-category h3 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.menu-admin-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+
+.menu-admin-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 10px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--disabled-color);
+  border-radius: 12px;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+.menu-admin-row.is-off { background: var(--bg-panel); }
+.menu-admin-row.is-off .menu-admin-info { opacity: 0.6; }
+.menu-admin-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.menu-admin-name { font-weight: 700; }
+.menu-admin-price { color: var(--text-muted); font-size: 0.9rem; }
+.menu-admin-status { font-size: 0.85rem; font-weight: 700; color: var(--success-color); }
+.menu-admin-row.is-off .menu-admin-status { color: var(--danger-color); }
+
+/* on/off switch — 44px tall, always visible, no hover needed */
+.menu-admin .menu-toggle {
+  position: relative;
+  flex: none;
+  width: 76px;
+  min-height: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--disabled-color);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.menu-admin .menu-toggle.is-on { background: var(--success-color); }
+.menu-toggle-knob {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(43, 27, 18, 0.3);
+  transition: transform 0.2s ease;
+}
+.menu-toggle.is-on .menu-toggle-knob { transform: translateX(32px); }
+.menu-admin .menu-toggle:disabled { opacity: 0.6; cursor: progress; }
+.menu-admin .menu-toggle:focus-visible { outline: 3px solid var(--accent-color); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-admin-row, .menu-admin .menu-toggle, .menu-toggle-knob { transition: none; }
+}
+
+/* ---- heading + Edit button + add/edit form ---- */
+.menu-admin-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.menu-admin-heading h2 { margin: 0; }
+.menu-admin-heading button { min-height: 44px; }
+.menu-admin .menu-edit-btn { flex: none; min-height: 44px; min-width: 64px; margin: 0; }
+
+.menu-form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.menu-form-field label { font-weight: 600; color: var(--text-muted); }
+.menu-form-field input,
+.menu-form-field select {
+  min-height: 44px;
+  padding: 0 12px;
+  font: inherit;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--disabled-color);
+  border-radius: 8px;
+}
+.menu-form-field input:focus-visible,
+.menu-form-field select:focus-visible { outline: 3px solid var(--accent-color); outline-offset: 1px; }
+.menu-form-error { min-height: 1.2em; margin: 0; font-size: 0.85rem; color: var(--danger-color); }
+#menu-form > .menu-form-error { margin-bottom: 10px; }
+
+@media (max-width: 520px) {
+  .menu-admin-row { flex-wrap: wrap; }
+  .menu-admin-info { flex-basis: 100%; }
+}
