@@ -1,130 +1,99 @@
-// transaction-log.js — Transaction Log screen (admin only)
+// staff-manager.js — Staff screen (admin only)
 //
-// POS-56: list the audit log with an order filter and a date filter, so the
-//         admin can audit any order.
+// POS-55: see every staff account and deactivate one, so the admin can
+//         manage the team.
 //
 // Backend operations (see API_CONTRACT_additions.md):
-//   listTransactionLogs({ orderId?, from?, to? })   transactions.js
-//   listStaffAccounts()                             staff.js — only to show
-//     names instead of ids in the "By" column; if it fails the ids are shown.
+//   listStaffAccounts()                 staff.js
+//   deactivateStaffAccount(id)          staff.js
+//
+// Deactivating is not undoable from this screen, so it asks for
+// confirmation first. The signed-in admin can't deactivate themselves
+// (they would lock themselves out); the backend should refuse that too.
 
-import { listTransactionLogs } from './backend/services/transactions.js';
-import { listStaffAccounts } from './backend/services/staff.js';
-import { callService, formatDateTime } from './admin-common.js';
+import { listStaffAccounts, deactivateStaffAccount } from './backend/services/staff.js';
+import { callService } from './admin-common.js';
 
-/** Only send the filters that were filled in. */
-export function buildFilters({ orderId, from, to }) {
-  const filters = {};
-  if (orderId?.trim()) filters.orderId = orderId.trim();
-  if (from) filters.from = from;
-  if (to) filters.to = to;
-  return filters;
-}
-
-export const transactionLogScreen = {
+export const staffManagerScreen = {
   render() {
     return `
       <div class="screen-container">
-        <h2>Transaction Log</h2>
-        <form id="log-filters" class="log-filters" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px">
-          <label class="field-label">Order
-            <input type="text" id="log-order" placeholder="Order ID" autocomplete="off" style="display:block;min-height:44px;margin-top:6px;padding:0 10px;font-size:1rem;border:1px solid var(--disabled-color);border-radius:8px" />
-          </label>
-          <label class="field-label">From
-            <input type="date" id="log-from" style="display:block;min-height:44px;margin-top:6px;padding:0 10px;font-size:1rem;border:1px solid var(--disabled-color);border-radius:8px" />
-          </label>
-          <label class="field-label">To
-            <input type="date" id="log-to" style="display:block;min-height:44px;margin-top:6px;padding:0 10px;font-size:1rem;border:1px solid var(--disabled-color);border-radius:8px" />
-          </label>
-          <div class="log-filter-actions" style="display:flex;gap:8px">
-            <button type="submit" id="log-apply-btn" style="width:auto;margin:0;min-height:44px">Filter</button>
-            <button type="button" id="log-clear-btn" class="btn-ghost" style="margin:0">Clear</button>
-          </div>
-        </form>
-        <p id="log-status" role="status"></p>
-        <table class="menu-table log-table">
-          <thead>
-            <tr><th>Time</th><th>Order</th><th>Event</th><th>By</th></tr>
-          </thead>
-          <tbody id="log-rows"></tbody>
-        </table>
+        <h2>Staff</h2>
+        <p id="staff-status" role="status"></p>
+        <ul id="staff-list" class="order-list"></ul>
       </div>
     `;
   },
 
-  async init() {
-    const form = document.getElementById('log-filters');
-    const orderInput = document.getElementById('log-order');
-    const fromInput = document.getElementById('log-from');
-    const toInput = document.getElementById('log-to');
-    const applyBtn = document.getElementById('log-apply-btn');
-    const rows = document.getElementById('log-rows');
-    const status = document.getElementById('log-status');
-    let staffNames = new Map();
+  async init(navigate, currentOrder, staffId) {
+    const list = document.getElementById('staff-list');
+    const status = document.getElementById('staff-status');
 
-    function render(logs) {
-      rows.innerHTML = '';
-      if (!logs.length) {
-        rows.innerHTML = '<tr><td colspan="4" class="order-empty">No log entries match these filters.</td></tr>';
+    function showError(message) {
+      status.className = 'error';
+      status.textContent = message;
+    }
+
+    function render(accounts) {
+      list.innerHTML = '';
+      if (!accounts.length) {
+        list.innerHTML = '<li class="order-empty">No staff accounts.</li>';
         return;
       }
-      for (const log of logs) {
-        const tr = document.createElement('tr');
-        const cells = [
-          formatDateTime(log.transactionTimestamp),
-          log.associatedOrderIdentifier,
-          (log.transactionTypeCategory ?? '').replace(/_/g, ' '),
-          staffNames.get(log.performedByStaffIdentifier) ?? log.performedByStaffIdentifier,
-        ];
-        for (const value of cells) {
-          const td = document.createElement('td');
-          td.textContent = value ?? '';
-          tr.appendChild(td);
+
+      for (const account of accounts) {
+        const active = account.staffAccountStatus === true;
+        const li = document.createElement('li');
+        li.className = 'order-line';
+
+        const info = document.createElement('div');
+        const name = document.createElement('p');
+        name.className = 'order-line-name';
+        name.textContent = account.staffFullName;
+        const detail = document.createElement('p');
+        detail.className = 'order-line-detail';
+        detail.textContent = [account.staffRoleType, account.staffEmailAddress, active ? 'Active' : 'Deactivated']
+          .filter(Boolean).join(' · ');
+        info.append(name, detail);
+        li.appendChild(info);
+
+        const isSelf = account.staffAccountIdentifier === staffId;
+        if (active && !isSelf) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'add-btn staff-deactivate-btn';
+          btn.dataset.staffId = account.staffAccountIdentifier;
+          btn.textContent = 'Deactivate';
+          btn.addEventListener('click', () => deactivate(account, btn));
+          li.appendChild(btn);
         }
-        rows.appendChild(tr);
+
+        list.appendChild(li);
       }
     }
 
     async function load() {
-      if (fromInput.value && toInput.value && fromInput.value > toInput.value) {
-        status.className = 'error';
-        status.textContent = '"From" must be on or before "To".';
-        return;
-      }
-
-      applyBtn.disabled = true;
-      const filters = buildFilters({ orderId: orderInput.value, from: fromInput.value, to: toInput.value });
-      const { data, error } = await callService(listTransactionLogs, 'The transaction log', filters);
-      applyBtn.disabled = false;
-
-      if (!document.body.contains(rows)) return;
+      const { data, error } = await callService(listStaffAccounts, 'Staff accounts');
+      if (!document.body.contains(list)) return; // screen was left while loading
       if (error) {
-        status.className = 'error';
-        status.textContent = error.message;
-        rows.innerHTML = '';
+        showError(error.message);
         return;
       }
-      status.className = '';
-      status.textContent = '';
       render(data ?? []);
     }
 
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      load();
-    });
+    async function deactivate(account, btn) {
+      if (btn.disabled) return;
+      if (!window.confirm(`Deactivate ${account.staffFullName}? They won't be able to log in.`)) return;
 
-    document.getElementById('log-clear-btn').addEventListener('click', () => {
-      orderInput.value = '';
-      fromInput.value = '';
-      toInput.value = '';
-      load();
-    });
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      status.className = '';
+      status.textContent = '';
 
-    // Staff names are a nice-to-have for the "By" column; ids are shown if this fails.
-    const staff = await callService(listStaffAccounts, 'Staff accounts');
-    if (!staff.error) {
-      staffNames = new Map((staff.data ?? []).map((s) => [s.staffAccountIdentifier, s.staffFullName]));
+      const { error } = await callService(deactivateStaffAccount, 'Deactivating staff', account.staffAccountIdentifier);
+      if (error) showError(error.message);
+      await load();
     }
 
     await load();
