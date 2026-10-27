@@ -20,14 +20,12 @@ describe('admin home screen', () => {
     expect(document.body.textContent).toContain('Menu Management');
   });
 
-  it('disables tiles that have no screen yet and gives them no route', () => {
+  it('every tile opens a screen now (no "Coming soon" tiles left)', () => {
     mount(admin);
-    const soon = document.querySelectorAll('.admin-tile--soon');
-    expect(soon.length).toBeGreaterThan(0);
-    soon.forEach((t) => {
-      expect(t.disabled).toBe(true);
-      expect(t.dataset.route).toBeUndefined();
-    });
+    expect(document.querySelectorAll('.admin-tile--soon').length).toBe(0);
+    const routes = [...document.querySelectorAll('.admin-tile')].map((t) => t.dataset.route);
+    expect(routes).toEqual(expect.arrayContaining(['transactions', 'staff', 'sales-report']));
+    routes.forEach((r) => expect(r).toBeTruthy());
   });
 
   it('navigates to the tile route on click', () => {

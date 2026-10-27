@@ -14,7 +14,7 @@ export const ADMIN_SECTIONS = [
     heading: 'Payments',
     tiles: [
       { route: 'refund', title: 'Refunds', description: 'Refund a completed payment in full or in part.' },
-      { route: null, title: 'Transaction Log', description: 'Review payments, refunds and other activity.' },
+      { route: 'transactions', title: 'Transaction Log', description: 'Review payments, refunds and other activity.' },
     ],
   },
   {
@@ -27,8 +27,8 @@ export const ADMIN_SECTIONS = [
   {
     heading: 'People and reports',
     tiles: [
-      { route: null, title: 'Staff Accounts', description: 'Add, update or deactivate staff.' },
-      { route: null, title: 'Sales Reports', description: 'Daily and weekly sales summaries.' },
+      { route: 'staff', title: 'Staff Accounts', description: 'See staff and deactivate accounts.' },
+      { route: 'sales-report', title: 'Sales Reports', description: 'Daily and weekly sales summaries.' },
     ],
   },
 ];
