@@ -300,6 +300,23 @@ question.
   - database lookup failure → `LOOKUP_FAILED`
 - **Authorization:** transaction logs are protected by RLS and are readable only by Admin users.
 
+### exportReportAsCsv
+- **Screen(s):** Admin Sales Report
+- **Backend module:** `backend/services/exports.js`
+- **Input:**
+  - reportId: `string` (uuid) — a `sales_reports.report_identifier`
+- **Returns:** `Blob` (`text/csv`) — **not** the `{ data, error }` shape. One
+  header row plus one data row (Report Type, Start Date, End Date, Total
+  Revenue, Generated At), matching the original stub's `Promise<Blob>`
+  signature. There's no form field to show an error next to on a file
+  download, so this throws on failure instead of returning `error`.
+- **Errors (thrown, not returned):**
+  - report doesn't exist, or caller is not admin -> `Error('Sales report not found.')`
+    (RLS filters a non-admin's query down to no row, same as a genuinely
+    missing id — same reasoning as `login`'s identical message for both
+    failure cases)
+  - database lookup failure -> `Error('Could not load the sales report.')`
+
 ### generateSalesReport
 - **Screen(s):** Admin Sales Report
 - **Backend module:** `backend/services/reports.js`
@@ -322,9 +339,11 @@ question.
   - `reportGenerationType` isn't one of the three allowed values -> `INVALID_REPORT_TYPE`
   - dates aren't `YYYY-MM-DD`, or `startDate` is after `endDate` -> `INVALID_DATE_RANGE`
   - caller is not admin -> `UNAUTHORIZED`
-- **Note:** `totalRevenueAmount` is **gross** revenue — the sum of `Completed`
-  payments processed within the date range. It is not net of refunds; see
-  the comment at the top of `reports.js` for why.
+- **Note:** `totalRevenueAmount` is **gross** revenue — the sum of
+  `Completed` and `Refunded` payments processed within the date range (a
+  refund flips the whole payment to `Refunded`, so excluding that status
+  would drop the original sale out of revenue entirely). It is not net of
+  refunds; see the comment at the top of `reports.js` for why.
 
 ### listSalesReports
 - **Screen(s):** Admin Sales Report
@@ -372,10 +391,10 @@ question.
 Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`
 (POS-45 adds `hideMenuItem`), `orders.js` (except `ModifyExistingOrder`),
 `orderItems.js` (POS-9), `payments.js` and `queue.js` (POS-19),
-`transactions.js` (POS-33), `reports.js` (POS-46), `staff.js` (POS-43),
-and the `create_order`
-(POS-8), `checkout_order` (POS-18/POS-39), and `process_refund` (POS-31)
-database functions. Everything listed below is an empty stub.
+`transactions.js` (POS-33), `reports.js` (POS-46), `exportReportAsCsv` in
+`exports.js` (POS-47), `staff.js` (POS-43), and the `create_order` (POS-8),
+`checkout_order` (POS-18/POS-39), and `process_refund` (POS-31) database
+functions. Everything listed below is an empty stub.
 
 ## Remaining operations (signatures TBD as they're implemented)
 
@@ -390,7 +409,7 @@ format above. Placeholder list from `backend/services/`:
   (POS-31) is done; this JS wrapper around it isn't
 - listInventoryItems, createInventoryItem, updateInventoryItem
   (`inventory.js`)
-- exportReportAsCsv, exportReportAsPdf (`exports.js`)
+- exportReportAsPdf (`exports.js`)
 
 ---
 
