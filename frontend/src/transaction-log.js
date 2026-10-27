@@ -12,12 +12,16 @@ import { listTransactionLogs } from './backend/services/transactions.js';
 import { listStaffAccounts } from './backend/services/staff.js';
 import { callService, formatDateTime } from './admin-common.js';
 
-/** Only send the filters that were filled in. */
+/**
+ * Only send the filters that were filled in. Dates are turned into the
+ * tablet's local start of day (From) and end of day (To), so "To: Oct 27"
+ * includes everything logged on Oct 27.
+ */
 export function buildFilters({ orderId, from, to }) {
   const filters = {};
   if (orderId?.trim()) filters.orderId = orderId.trim();
-  if (from) filters.from = from;
-  if (to) filters.to = to;
+  if (from) filters.from = new Date(`${from}T00:00:00`).toISOString();
+  if (to) filters.to = new Date(`${to}T23:59:59.999`).toISOString();
   return filters;
 }
 

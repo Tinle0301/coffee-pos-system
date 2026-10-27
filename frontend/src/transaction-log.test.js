@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { transactionLogScreen } from './transaction-log.js';
+import { transactionLogScreen, buildFilters } from './transaction-log.js';
 import { listTransactionLogs } from './backend/services/transactions.js';
 
 // Mock the backend services (Node can't load the CDN-based supabase-client.js chain)
@@ -33,9 +33,27 @@ describe('POS-56: Transaction Log with order and date filters', () => {
     $('#log-filters').dispatchEvent(new Event('submit', { cancelable: true }));
     await flush();
 
-    expect(listTransactionLogs).toHaveBeenLastCalledWith({ orderId: 'ord-1', from: '2026-10-01', to: '2026-10-31' });
+    expect(listTransactionLogs).toHaveBeenLastCalledWith({
+      orderId: 'ord-1',
+      from: new Date('2026-10-01T00:00:00').toISOString(),     // local start of Oct 1
+      to: new Date('2026-10-31T23:59:59.999').toISOString(),   // local end of Oct 31
+    });
     const cells = [...document.querySelectorAll('#log-rows td')].map((td) => td.textContent);
     expect(cells).toContain('order created');
     expect(cells).toContain('Alex Barista'); // staff id shown as a name
+  });
+
+  it('includes the whole "To" day, in local time', () => {
+    const { to } = buildFilters({ to: '2026-10-27' });
+    const end = new Date(to);
+    expect(end.getFullYear()).toBe(2026);
+    expect(end.getMonth()).toBe(9);      // October
+    expect(end.getDate()).toBe(27);
+    expect(end.getHours()).toBe(23);
+    expect(end.getMinutes()).toBe(59);
+  });
+
+  it('leaves out filters that are empty', () => {
+    expect(buildFilters({ orderId: '  ', from: '', to: '' })).toEqual({});
   });
 });
