@@ -223,6 +223,53 @@ question.
     and isn't really safe to call on a real menu item; kept for the
     original stub signature's sake
 
+### listInventoryItems
+- **Screen(s):** Admin Inventory
+- **Backend module:** `backend/services/inventory.js`
+- **Input:** none
+- **Returns:** inventory items ordered by name:
+  ```json
+  {
+    "inventoryItemIdentifier": "uuid",
+    "inventoryItemName": "Espresso Beans",
+    "availableQuantityValue": 25,
+    "minimumStockThreshold": 5,
+    "inventoryLastUpdatedTimestamp": "2026-10-20T12:00:00Z"
+  }
+  ```
+- **Errors:**
+  - database lookup failure -> `LOOKUP_FAILED`
+
+### listLowStockInventoryItems
+- **Screen(s):** Admin Inventory
+- **Backend module:** `backend/services/inventory.js` (calls the
+  `list_low_stock_inventory` database function from POS-57)
+- **Input:** none
+- **Returns:** an array of inventory items using the same shape as
+  `listInventoryItems`, containing only items whose available quantity is
+  less than or equal to their minimum stock threshold
+- **Errors:**
+  - caller is not an active admin -> `UNAUTHORIZED`
+  - database lookup failure -> `LOOKUP_FAILED`
+
+### restockInventoryItem
+- **Screen(s):** Admin Inventory
+- **Backend module:** `backend/services/inventory.js` (calls the
+  `restock_inventory` database function from POS-58)
+- **Input:**
+  - `inventoryItemId`: `string` (uuid)
+  - `quantityToAdd`: `number` — must be greater than zero
+- **Returns:** the updated inventory item using the same shape as
+  `listInventoryItems`
+- **Errors:**
+  - `quantityToAdd <= 0` or is not a valid number -> `INVALID_QUANTITY`
+  - inventory item does not exist -> `INVENTORY_ITEM_NOT_FOUND`
+  - caller is not an active admin -> `UNAUTHORIZED`
+  - unexpected database failure -> `UPDATE_FAILED`
+- **Note:** stock changes go through the POS-58 database function rather
+  than updating `inventory_items` directly so that each successful restock
+  is recorded in the inventory stock audit log.
+
 ### processPayment
 - **Screen(s):** Checkout
 - **Backend module:** `backend/services/payments.js` (calls the
@@ -392,9 +439,10 @@ Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`
 (POS-45 adds `hideMenuItem`), `orders.js` (except `ModifyExistingOrder`),
 `orderItems.js` (POS-9), `payments.js` and `queue.js` (POS-19),
 `transactions.js` (POS-33), `reports.js` (POS-46), `exportReportAsCsv` in
-`exports.js` (POS-47), `staff.js` (POS-43), and the `create_order` (POS-8),
-`checkout_order` (POS-18/POS-39), and `process_refund` (POS-31) database
-functions. Everything listed below is an empty stub.
+`exports.js` (POS-47), `staff.js` (POS-43), `inventory.js` (POS-44),
+and the `create_order` (POS-8), `checkout_order` (POS-18/POS-39),
+and `process_refund` (POS-31) database functions. Everything listed below
+is an empty stub.
 
 ## Remaining operations (signatures TBD as they're implemented)
 
@@ -407,8 +455,6 @@ format above. Placeholder list from `backend/services/`:
 - MarkOrderAsInProgress (`orderStatus.js`)
 - processRefund (`refunds.js`) — the `process_refund` database function
   (POS-31) is done; this JS wrapper around it isn't
-- listInventoryItems, createInventoryItem, updateInventoryItem
-  (`inventory.js`)
 - exportReportAsPdf (`exports.js`)
 
 ---
