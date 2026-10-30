@@ -58,3 +58,25 @@
 @keyframes inventory-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 520px) { .inventory-count-num { font-size: 1.6rem; } }
 @media (prefers-reduced-motion: reduce) { .inventory-row { animation: none; } }
+
+/* ---- Restock button + dialog ---- */
+.inventory-row-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.inventory-row-head .inventory-row-main { flex: 1; justify-content: flex-start; gap: 10px; }
+.inventory .inventory-restock-btn {
+  flex: none; min-height: 44px; min-width: 96px; margin: 0; padding: 0 16px;
+  font: inherit; font-weight: 700; cursor: pointer;
+}
+.inventory-message { min-height: 1.4em; margin: 8px 0 0; color: var(--success-color); font-weight: 600; }
+.inventory-message.is-error { color: var(--danger-color); }
+
+.restock-current { margin: 0 0 16px; color: var(--text-muted); }
+.inventory-form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.inventory-form-field label { font-weight: 600; color: var(--text-muted); }
+.inventory-form-field input {
+  min-height: 48px; padding: 0 12px; font: inherit; font-size: 1.1rem;
+  color: var(--text-main); background: var(--bg-surface);
+  border: 1px solid var(--disabled-color); border-radius: 8px;
+}
+.inventory-form-field input:focus-visible { outline: 3px solid var(--accent-color); outline-offset: 1px; }
+.inventory-form-error { min-height: 1.2em; margin: 0 0 8px; font-size: 0.85rem; color: var(--danger-color); }
+.restock-preview { min-height: 1.4em; margin: 0 0 4px; font-weight: 700; color: var(--success-color); }
