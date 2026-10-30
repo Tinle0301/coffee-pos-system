@@ -5,6 +5,7 @@
 
 import {
   listInventoryItems,
+  restockInventoryItem,
 } from './backend/services/inventory.js';
 
 /**
@@ -14,4 +15,17 @@ import {
  */
 export async function listInventory() {
   return listInventoryItems();
+}
+
+/**
+ * Add stock to one item (POS-58 restock function: updates the quantity and
+ * writes the audit log). Resolves to { data: updatedItem, error } — the
+ * error messages are already safe to show to the person.
+ *
+ * @param {string} inventoryItemId
+ * @param {number} quantityToAdd
+ * @returns {ReturnType<typeof restockInventoryItem>}
+ */
+export async function restockInventory(inventoryItemId, quantityToAdd) {
+  return restockInventoryItem(inventoryItemId, quantityToAdd);
 }
