@@ -73,8 +73,8 @@
 /* ---- heading + Edit button + add/edit form ---- */
 .menu-admin-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .menu-admin-heading h2 { margin: 0; }
-.menu-admin-heading button { min-height: 44px; }
-.menu-admin .menu-edit-btn { flex: none; min-height: 44px; min-width: 64px; margin: 0; }
+.menu-admin-heading button { width: auto; min-height: 44px; margin: 0; }
+.menu-admin .menu-edit-btn { flex: none; width: auto; min-height: 44px; min-width: 64px; margin: 0; }
 
 .menu-form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .menu-form-field label { font-weight: 600; color: var(--text-muted); }

@@ -3,7 +3,7 @@
 .inventory-top { margin-bottom: 8px; }
 .inventory-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .inventory-heading h2 { margin: 0; }
-.inventory-heading button { min-height: 44px; margin: 0; }
+.inventory-heading button { width: auto; min-height: 44px; margin: 0; }
 
 .inventory-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
 .inventory-count {
@@ -23,7 +23,7 @@
 
 .inventory-filters { display: flex; gap: 8px; margin-bottom: 14px; }
 .inventory .inventory-filter {
-  min-height: 44px; margin: 0; padding: 0 16px; font: inherit; font-weight: 600;
+  width: auto; min-height: 44px; margin: 0; padding: 0 16px; font: inherit; font-weight: 600;
   color: var(--text-main); background: var(--bg-surface);
   border: 1px solid var(--disabled-color); border-radius: 999px; cursor: pointer;
 }
@@ -61,9 +61,9 @@
 
 /* ---- Restock button + dialog ---- */
 .inventory-row-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.inventory-row-head .inventory-row-main { flex: 1; justify-content: flex-start; gap: 10px; }
+.inventory-row-head .inventory-row-main { flex: 1; min-width: 0; justify-content: flex-start; gap: 10px; }
 .inventory .inventory-restock-btn {
-  flex: none; min-height: 44px; min-width: 96px; margin: 0; padding: 0 16px;
+  flex: none; width: auto; min-height: 44px; min-width: 96px; margin: 0; padding: 0 16px;
   font: inherit; font-weight: 700; cursor: pointer;
 }
 .inventory-message { min-height: 1.4em; margin: 8px 0 0; color: var(--success-color); font-weight: 600; }
