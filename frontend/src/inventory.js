@@ -3,7 +3,7 @@
 // "Low" matches the backend's POS-57 rule: quantity at or below the item's
 // minimum stock threshold. Read-only for now; admin-only via the route guard
 // in main.js (RLS is the real control).
-import { listInventory } from './inventory-api.js';
+import { listInventory, restockInventory } from './inventory-api.js';
 
 function escapeHtml(text) {
   return String(text ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -55,6 +55,19 @@ function formatUpdated(timestamp) {
   return `Updated ${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
 }
 
+export const MAX_RESTOCK = 9999.99;
+
+// Check the "amount to add" box. Returns { error } or { value }.
+export function validateRestockAmount(raw) {
+  const text = String(raw ?? '').trim();
+  if (!text) return { error: 'Enter how much to add.' };
+  if (!/^\d+(\.\d{1,2})?$/.test(text)) return { error: 'Use a number like 10 or 2.5.' };
+  const value = Number(text);
+  if (value <= 0) return { error: 'Enter an amount greater than zero.' };
+  if (value > MAX_RESTOCK) return { error: 'That is too much to add at once. Enter 9,999.99 or less.' };
+  return { value };
+}
+
 export const inventoryScreen = {
   render() {
     return `
@@ -66,12 +79,31 @@ export const inventoryScreen = {
           <h2>Inventory</h2>
           <button type="button" id="inventory-refresh-btn" class="btn-ghost">Refresh</button>
         </div>
+        <p id="inventory-message" class="inventory-message" role="status" aria-live="polite"></p>
         <div id="inventory-summary" class="inventory-summary" aria-live="polite"></div>
         <div class="inventory-filters" role="group" aria-label="Filter inventory">
           <button type="button" class="inventory-filter is-active" data-filter="all" aria-pressed="true">All items</button>
           <button type="button" class="inventory-filter" data-filter="attention" aria-pressed="false">Needs attention</button>
         </div>
         <div id="inventory-list">Loading inventory...</div>
+
+        <div id="restock-modal" class="modal-overlay" hidden>
+          <form id="restock-form" class="screen-container modal-card" role="dialog" aria-modal="true" aria-labelledby="restock-title" novalidate>
+            <h2 id="restock-title"></h2>
+            <p id="restock-current" class="restock-current"></p>
+            <div class="inventory-form-field">
+              <label for="restock-amount">Amount to add</label>
+              <input id="restock-amount" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 10">
+              <p id="restock-amount-error" class="inventory-form-error" role="alert"></p>
+            </div>
+            <p id="restock-preview" class="restock-preview" aria-live="polite"></p>
+            <p id="restock-error" class="inventory-form-error" role="alert"></p>
+            <div class="modal-actions">
+              <button type="button" id="restock-cancel" class="btn-ghost">Cancel</button>
+              <button type="submit" id="restock-save">Add stock</button>
+            </div>
+          </form>
+        </div>
       </div>
     `;
   },
@@ -126,6 +158,100 @@ export const inventoryScreen = {
     }));
     refreshBtn.addEventListener('click', load);
 
+    // ---------- Restock ----------
+    const message = document.getElementById('inventory-message');
+    const modal = document.getElementById('restock-modal');
+    const form = document.getElementById('restock-form');
+    const amountInput = document.getElementById('restock-amount');
+    const amountError = document.getElementById('restock-amount-error');
+    const formError = document.getElementById('restock-error');
+    const preview = document.getElementById('restock-preview');
+    const saveBtn = document.getElementById('restock-save');
+    const cancelBtn = document.getElementById('restock-cancel');
+    let restocking = null; // the item being restocked
+    let saving = false;
+    let returnFocusTo = null;
+
+    const say = (text, isError = false) => {
+      message.textContent = text;
+      message.classList.toggle('is-error', isError);
+    };
+
+    const updatePreview = () => {
+      const { value } = validateRestockAmount(amountInput.value);
+      preview.textContent = value && restocking
+        ? `New total: ${formatQty(Math.round((Number(restocking.availableQuantityValue) + value) * 100) / 100)}`
+        : '';
+    };
+
+    function openRestock(item) {
+      restocking = item;
+      returnFocusTo = document.activeElement;
+      document.getElementById('restock-title').textContent = `Restock ${item.inventoryItemName}`;
+      document.getElementById('restock-current').textContent = `${formatQty(item.availableQuantityValue)} on hand · reorder at ${formatQty(item.minimumStockThreshold)}`;
+      amountInput.value = '';
+      amountError.textContent = '';
+      formError.textContent = '';
+      preview.textContent = '';
+      saving = false;
+      saveBtn.disabled = false;
+      cancelBtn.disabled = false;
+      modal.hidden = false;
+      amountInput.focus();
+    }
+
+    function closeRestock() {
+      if (saving) return;
+      modal.hidden = true;
+      restocking = null;
+      if (returnFocusTo && typeof returnFocusTo.focus === 'function') returnFocusTo.focus();
+    }
+
+    list.addEventListener('click', (event) => {
+      const btn = event.target.closest('.inventory-restock-btn');
+      if (!btn) return;
+      const item = items.find((i) => String(i.inventoryItemIdentifier) === btn.dataset.itemId);
+      if (item) openRestock(item);
+    });
+    amountInput.addEventListener('input', updatePreview);
+    cancelBtn.addEventListener('click', closeRestock);
+    modal.addEventListener('click', (event) => { if (event.target === modal) closeRestock(); });
+    modal.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeRestock(); });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (saving || !restocking) return; // double-tap protection
+      amountError.textContent = '';
+      formError.textContent = '';
+
+      const { error: invalid, value } = validateRestockAmount(amountInput.value);
+      if (invalid) {
+        amountError.textContent = invalid;
+        amountInput.focus();
+        return;
+      }
+
+      saving = true;
+      saveBtn.disabled = true;
+      cancelBtn.disabled = true;
+      const item = restocking;
+      const { data: updated, error } = await restockInventory(item.inventoryItemIdentifier, value);
+      saving = false;
+      saveBtn.disabled = false;
+      cancelBtn.disabled = false;
+
+      if (error || !updated) {
+        // Keep the box open with what they typed. The service's messages are safe to show.
+        formError.textContent = error?.message || 'Could not restock. Please try again.';
+        return;
+      }
+
+      items = items.map((i) => (i.inventoryItemIdentifier === item.inventoryItemIdentifier ? updated : i));
+      closeRestock();
+      say(`Added ${formatQty(value)} to ${updated.inventoryItemName}. Now ${formatQty(updated.availableQuantityValue)} on hand.`);
+      draw();
+    });
+
     await load();
   },
 
@@ -144,9 +270,13 @@ export const inventoryScreen = {
     const level = stockLevel(item);
     return `
       <li class="inventory-row inventory-row--${level}">
-        <div class="inventory-row-main">
-          <span class="inventory-name">${escapeHtml(item.inventoryItemName)}</span>
-          <span class="inventory-badge inventory-badge--${level}">${STOCK_LEVELS[level].label}</span>
+        <div class="inventory-row-head">
+          <div class="inventory-row-main">
+            <span class="inventory-name">${escapeHtml(item.inventoryItemName)}</span>
+            <span class="inventory-badge inventory-badge--${level}">${STOCK_LEVELS[level].label}</span>
+          </div>
+          <button type="button" class="inventory-restock-btn" data-item-id="${escapeHtml(item.inventoryItemIdentifier)}"
+            aria-label="Restock ${escapeHtml(item.inventoryItemName)}">Restock</button>
         </div>
         <div class="inventory-row-detail">
           <span class="inventory-qty"><strong>${formatQty(item.availableQuantityValue)}</strong> on hand</span>
