@@ -223,6 +223,53 @@ question.
     and isn't really safe to call on a real menu item; kept for the
     original stub signature's sake
 
+### listInventoryItems
+- **Screen(s):** Admin Inventory
+- **Backend module:** `backend/services/inventory.js`
+- **Input:** none
+- **Returns:** inventory items ordered by name:
+  ```json
+  {
+    "inventoryItemIdentifier": "uuid",
+    "inventoryItemName": "Espresso Beans",
+    "availableQuantityValue": 25,
+    "minimumStockThreshold": 5,
+    "inventoryLastUpdatedTimestamp": "2026-10-20T12:00:00Z"
+  }
+  ```
+- **Errors:**
+  - database lookup failure -> `LOOKUP_FAILED`
+
+### listLowStockInventoryItems
+- **Screen(s):** Admin Inventory
+- **Backend module:** `backend/services/inventory.js` (calls the
+  `list_low_stock_inventory` database function from POS-57)
+- **Input:** none
+- **Returns:** an array of inventory items using the same shape as
+  `listInventoryItems`, containing only items whose available quantity is
+  less than or equal to their minimum stock threshold
+- **Errors:**
+  - caller is not an active admin -> `UNAUTHORIZED`
+  - database lookup failure -> `LOOKUP_FAILED`
+
+### restockInventoryItem
+- **Screen(s):** Admin Inventory
+- **Backend module:** `backend/services/inventory.js` (calls the
+  `restock_inventory` database function from POS-58)
+- **Input:**
+  - `inventoryItemId`: `string` (uuid)
+  - `quantityToAdd`: `number` — must be greater than zero
+- **Returns:** the updated inventory item using the same shape as
+  `listInventoryItems`
+- **Errors:**
+  - `quantityToAdd <= 0` or is not a valid number -> `INVALID_QUANTITY`
+  - inventory item does not exist -> `INVENTORY_ITEM_NOT_FOUND`
+  - caller is not an active admin -> `UNAUTHORIZED`
+  - unexpected database failure -> `UPDATE_FAILED`
+- **Note:** stock changes go through the POS-58 database function rather
+  than updating `inventory_items` directly so that each successful restock
+  is recorded in the inventory stock audit log.
+
 ### processPayment
 - **Screen(s):** Checkout
 - **Backend module:** `backend/services/payments.js` (calls the
@@ -300,15 +347,102 @@ question.
   - database lookup failure → `LOOKUP_FAILED`
 - **Authorization:** transaction logs are protected by RLS and are readable only by Admin users.
 
+### exportReportAsCsv
+- **Screen(s):** Admin Sales Report
+- **Backend module:** `backend/services/exports.js`
+- **Input:**
+  - reportId: `string` (uuid) — a `sales_reports.report_identifier`
+- **Returns:** `Blob` (`text/csv`) — **not** the `{ data, error }` shape. One
+  header row plus one data row (Report Type, Start Date, End Date, Total
+  Revenue, Generated At), matching the original stub's `Promise<Blob>`
+  signature. There's no form field to show an error next to on a file
+  download, so this throws on failure instead of returning `error`.
+- **Errors (thrown, not returned):**
+  - report doesn't exist, or caller is not admin -> `Error('Sales report not found.')`
+    (RLS filters a non-admin's query down to no row, same as a genuinely
+    missing id — same reasoning as `login`'s identical message for both
+    failure cases)
+  - database lookup failure -> `Error('Could not load the sales report.')`
+
+### generateSalesReport
+- **Screen(s):** Admin Sales Report
+- **Backend module:** `backend/services/reports.js`
+- **Input:**
+  - reportGenerationType: `'Daily' | 'Weekly' | 'Monthly'`
+  - startDate: `string` (`'YYYY-MM-DD'`)
+  - endDate: `string` (`'YYYY-MM-DD'`, inclusive)
+- **Returns:**
+  ```json
+  {
+    "reportIdentifier": "uuid",
+    "reportGenerationType": "Daily",
+    "reportStartDate": "2026-10-01",
+    "reportEndDate": "2026-10-01",
+    "totalRevenueAmount": 412.50,
+    "reportGeneratedTimestamp": "2026-10-02T03:00:00Z"
+  }
+  ```
+- **Errors:**
+  - `reportGenerationType` isn't one of the three allowed values -> `INVALID_REPORT_TYPE`
+  - dates aren't `YYYY-MM-DD`, or `startDate` is after `endDate` -> `INVALID_DATE_RANGE`
+  - caller is not admin -> `UNAUTHORIZED`
+- **Note:** `totalRevenueAmount` is **gross** revenue — the sum of
+  `Completed` and `Refunded` payments processed within the date range (a
+  refund flips the whole payment to `Refunded`, so excluding that status
+  would drop the original sale out of revenue entirely). It is not net of
+  refunds; see the comment at the top of `reports.js` for why.
+
+### listSalesReports
+- **Screen(s):** Admin Sales Report
+- **Backend module:** `backend/services/reports.js`
+- **Input:** none
+- **Returns:** `Array<>` of the same shape as `generateSalesReport`, newest first
+- **Errors:** none beyond the generic `LOOKUP_FAILED`
+
+### listStaffAccounts
+- **Screen(s):** Admin Staff screen
+- **Backend module:** `backend/services/staff.js`
+- **Input:** none
+- **Returns:** staff accounts sorted by name: `staffAccountIdentifier`,
+  `staffFullName`, `staffRoleType`, `staffEmailAddress`,
+  `staffAccountStatus`, `accountCreationTimestamp`. Admins see everyone;
+  anyone else only sees their own row (RLS).
+- **Errors:** `LOOKUP_FAILED`
+
+### updateStaffAccount / deactivateStaffAccount / reactivateStaffAccount
+- **Screen(s):** Admin Staff screen
+- **Backend module:** `backend/services/staff.js`, calling the
+  `set_staff_role` and `set_staff_active` database functions (POS-43)
+- **Input:** `updateStaffAccount(staffAccountIdentifier, { staffFullName?, staffRoleType?, staffAccountStatus? })`;
+  `deactivateStaffAccount(id)` and `reactivateStaffAccount(id)` are shortcuts
+  for `staffAccountStatus: false / true`
+- **Returns:** the updated staff account (same fields as above)
+- **Errors:**
+  - caller is not an active admin -> `UNAUTHORIZED`
+  - changing your own role or deactivating yourself -> `SELF_CHANGE`
+    (this is what keeps at least one admin in the shop)
+  - role isn't `Barista` or `Admin` -> `INVALID_ROLE`
+  - unknown staff id -> `STAFF_NOT_FOUND`
+  - empty name -> `INVALID_NAME`; no changes given -> `NOTHING_TO_UPDATE`
+  - anything else -> `UPDATE_FAILED`
+
+### createStaffAccount
+- Always returns `NOT_SUPPORTED`. Creating a login needs the Supabase
+  secret key, which must never be in the browser, so new staff are added in
+  the Supabase dashboard (`docs/SETUP.md`, "Adding a staff member").
+
 ---
 
 ## Implementation status (Sprint 3, in progress)
 
-Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`,
-`orders.js` (except `ModifyExistingOrder`), `orderItems.js` (POS-9),
-`payments.js` and `queue.js` (POS-19), `transactions.js` (POS-33), and the
-`create_order` (POS-8) and `checkout_order` (POS-18) database functions.
-Everything listed below is an empty stub.
+Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`
+(POS-45 adds `hideMenuItem`), `orders.js` (except `ModifyExistingOrder`),
+`orderItems.js` (POS-9), `payments.js` and `queue.js` (POS-19),
+`transactions.js` (POS-33), `reports.js` (POS-46), `exportReportAsCsv` in
+`exports.js` (POS-47), `staff.js` (POS-43), `inventory.js` (POS-44),
+and the `create_order` (POS-8), `checkout_order` (POS-18/POS-39),
+and `process_refund` (POS-31) database functions. Everything listed below
+is an empty stub.
 
 ## Remaining operations (signatures TBD as they're implemented)
 
@@ -319,13 +453,9 @@ format above. Placeholder list from `backend/services/`:
   in `orders.js` for why (item-level and status changes already have
   homes elsewhere, order-level "changes" doesn't have settled semantics)
 - MarkOrderAsInProgress (`orderStatus.js`)
-- processRefund (`refunds.js`)
-- listInventoryItems, createInventoryItem, updateInventoryItem
-  (`inventory.js`)
-- generateSalesReport, listSalesReports (`reports.js`)
-- exportReportAsCsv, exportReportAsPdf (`exports.js`)
-- createStaffAccount, updateStaffAccount, deactivateStaffAccount,
-  listStaffAccounts (`staff.js`)
+- processRefund (`refunds.js`) — the `process_refund` database function
+  (POS-31) is done; this JS wrapper around it isn't
+- exportReportAsPdf (`exports.js`)
 
 ---
 

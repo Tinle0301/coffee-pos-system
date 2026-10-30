@@ -10,6 +10,9 @@ import { paymentScreen } from './payment.js';
 import { queueScreen } from './queue.js';
 import { adminHomeScreen } from './admin-home.js';
 import { inventoryScreen } from './inventory.js';
+import { salesReportScreen } from './sales-report.js';
+import { staffManagerScreen } from './staff-manager.js';
+import { transactionLogScreen } from './transaction-log.js';
 
 // Global application memory state — staffId starts null
 const state = {
@@ -27,13 +30,16 @@ const routes = {
   refund: refundScreen,
   payment: paymentScreen,
   queue: queueScreen,
+  'sales-report': salesReportScreen,
+  staff: staffManagerScreen,
+  transactions: transactionLogScreen,
   admin: adminHomeScreen,
   inventory: inventoryScreen
 };
 
 // Screens only an Admin may open. Hiding a button isn't security (RLS is),
 // but don't draw an admin screen to a barista.
-const ADMIN_ONLY = new Set(['admin', 'refund', 'menu', 'inventory']);
+const ADMIN_ONLY = new Set(['admin', 'refund', 'menu', 'inventory', 'sales-report', 'staff', 'transactions']);
 
 const appRoot = document.querySelector('#app');
 let contentRoot;
@@ -71,6 +77,7 @@ function renderLoginShell() {
 export function navigate(screenName) {
   const targetScreen = routes[screenName];
   if (!targetScreen) return;
+  // Hiding the button isn't security (RLS is), but don't draw an admin screen to a barista.
   if (ADMIN_ONLY.has(screenName) && state.staffRole !== 'Admin') return;
 
   // 1. Clear layout and inject fresh layout template string

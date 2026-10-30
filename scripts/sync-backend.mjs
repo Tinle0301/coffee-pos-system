@@ -27,6 +27,8 @@ const FILES = [
   ['supabase-client.js', 'supabase-client.js'],
   // auth.js sits one folder higher in the copy, so its import path changes
   ['services/auth.js', 'auth.js', [["from '../supabase-client.js'", "from './supabase-client.js'"]]],
+  ['services/staff.js', 'services/staff.js'],
+  ['services/inventory.js', 'services/inventory.js'],
   ['services/menu.js', 'services/menu.js'],
   ['services/orders.js', 'services/orders.js'],
   ['services/orderItems.js', 'services/orderItems.js'],
@@ -34,6 +36,8 @@ const FILES = [
   ['services/queue.js', 'services/queue.js'],
   ['services/orderStatus.js', 'services/orderStatus.js'],
   ['services/transactions.js', 'services/transactions.js'],
+  ['services/reports.js', 'services/reports.js'],
+  ['services/exports.js', 'services/exports.js'],
 ];
 
 const check = process.argv.includes('--check');
