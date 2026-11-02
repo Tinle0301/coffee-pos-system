@@ -11,6 +11,12 @@ alter table inventory_stock_logs
   add constraint inventory_stock_logs_quantity_change_value_check
   check (quantity_change_value <> 0);
 
+-- Stock changes made outside an authenticated app session, such as through
+-- the Supabase Dashboard / SQL Editor, do not have an auth.uid().
+-- Allow those changes to still be recorded in the audit log.
+alter table inventory_stock_logs
+  alter column performed_by_staff_identifier drop not null;
+
 
 -- POS-63 centralizes inventory audit logging here.
 -- Any real change to available_quantity_value creates one audit row.

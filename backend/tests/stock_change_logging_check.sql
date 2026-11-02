@@ -354,5 +354,55 @@ begin
     'PASS 6: non-stock updates do not create stock logs';
 end $$;
 
+-- -------------------------------------------------------------------------
+-- 7. Stock changes without an authenticated app user still succeed and log
+-- -------------------------------------------------------------------------
+
+reset role;
+
+select set_config(
+  'request.jwt.claims',
+  '{}',
+  true
+);
+
+update inventory_items
+set available_quantity_value = 8.00
+where inventory_item_identifier =
+  '63000000-0000-0000-0000-000000000002';
+
+do $$
+declare
+  v_count integer;
+begin
+  if not exists (
+    select 1
+    from inventory_stock_logs
+    where inventory_item_identifier =
+      '63000000-0000-0000-0000-000000000002'
+      and quantity_before_value = 8.50
+      and quantity_change_value = -0.50
+      and quantity_after_value = 8.00
+      and performed_by_staff_identifier is null
+  ) then
+    raise exception
+      'FAIL 7a: unauthenticated stock change was not logged correctly';
+  end if;
+
+  select count(*)
+    into v_count
+    from inventory_stock_logs
+    where inventory_item_identifier =
+      '63000000-0000-0000-0000-000000000002';
+
+  if v_count <> 4 then
+    raise exception
+      'FAIL 7b: expected 4 total stock logs, found %',
+      v_count;
+  end if;
+
+  raise notice
+    'PASS 7: stock changes without an authenticated user still work and are logged';
+end $$;
 
 rollback;
