@@ -379,6 +379,12 @@ question.
     "reportStartDate": "2026-10-01",
     "reportEndDate": "2026-10-01",
     "totalRevenueAmount": 412.50,
+    "orderCount": 57,
+    "paymentMethodTotals": {
+      "Cash": 150.25,
+      "Credit/Debit": 212.00,
+      "Mobile Pay": 50.25
+    },
     "reportGeneratedTimestamp": "2026-10-02T03:00:00Z"
   }
   ```
@@ -391,6 +397,12 @@ question.
   refund flips the whole payment to `Refunded`, so excluding that status
   would drop the original sale out of revenue entirely). It is not net of
   refunds; see the comment at the top of `reports.js` for why.
+- **Note (POS-66):** `orderCount` and `paymentMethodTotals` share that same
+  scope — `orderCount` is the number of distinct orders behind those
+  payments, and the three `paymentMethodTotals` values always sum to
+  `totalRevenueAmount`. `paymentMethodTotals` always has all three keys
+  (`Cash`, `Credit/Debit`, `Mobile Pay`), `0` for a method with no
+  transactions in range.
 
 ### listSalesReports
 - **Screen(s):** Admin Sales Report
