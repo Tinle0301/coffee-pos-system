@@ -1,4 +1,4 @@
--- 0018_sales_report_payment_breakdown.sql
+-- 0019_sales_report_payment_breakdown.sql
 -- POS-66: sales reports include order count and totals by payment method.
 --
 -- Two additive columns on sales_reports — existing rows get sane defaults
