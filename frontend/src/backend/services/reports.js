@@ -19,6 +19,14 @@
 // what happened in the range. If net-of-refunds reporting is wanted, it
 // should probably be its own figure alongside this one, not a silent
 // subtraction.
+//
+// orderCount and paymentMethodTotals (POS-66) share that same scope: both
+// are computed from the same Completed+Refunded payment rows as
+// totalRevenueAmount, so the three paymentMethodTotals values always sum
+// to totalRevenueAmount. orderCount counts distinct order ids rather than
+// payment rows — normally the same number, since an order has at most one
+// Completed/Refunded payment, but distinct-counting is what actually
+// matches "how many orders" instead of relying on that invariant.
 
 import { supabase } from '../supabase-client.js';
 
@@ -26,6 +34,7 @@ import { supabase } from '../supabase-client.js';
 
 const VALID_GENERATION_TYPES = ['Daily', 'Weekly', 'Monthly'];
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const PAYMENT_METHODS = ['Cash', 'Credit/Debit', 'Mobile Pay'];
 
 /**
  * @param {'Daily'|'Weekly'|'Monthly'} reportGenerationType
@@ -54,7 +63,7 @@ export async function generateSalesReport(reportGenerationType, startDate, endDa
 
   const { data: payments, error: paymentsError } = await supabase
     .from('payments')
-    .select('payment_amount_value')
+    .select('payment_amount_value, payment_method_type, associated_order_identifier')
     .in('payment_completion_status', ['Completed', 'Refunded'])
     .gte('payment_processing_timestamp', rangeStart)
     .lt('payment_processing_timestamp', rangeEndExclusive);
@@ -64,6 +73,8 @@ export async function generateSalesReport(reportGenerationType, startDate, endDa
   }
 
   const totalRevenue = round2(payments.reduce((sum, p) => sum + p.payment_amount_value, 0));
+  const orderCount = new Set(payments.map((p) => p.associated_order_identifier)).size;
+  const paymentMethodTotals = summarizeByPaymentMethod(payments);
 
   const { data, error } = await supabase
     .from('sales_reports')
@@ -72,6 +83,8 @@ export async function generateSalesReport(reportGenerationType, startDate, endDa
       report_start_date: startDate,
       report_end_date: endDate,
       total_revenue_amount: totalRevenue,
+      order_count: orderCount,
+      payment_method_totals: paymentMethodTotals,
     })
     .select()
     .single();
@@ -103,6 +116,18 @@ function round2(amount) {
   return Math.round(amount * 100) / 100;
 }
 
+function summarizeByPaymentMethod(payments) {
+  const rawSums = {};
+  for (const p of payments) {
+    rawSums[p.payment_method_type] = (rawSums[p.payment_method_type] || 0) + p.payment_amount_value;
+  }
+  const totals = {};
+  for (const method of PAYMENT_METHODS) {
+    totals[method] = round2(rawSums[method] || 0);
+  }
+  return totals;
+}
+
 function nextDayIso(dateStr) {
   const date = new Date(`${dateStr}T00:00:00`);
   date.setDate(date.getDate() + 1);
@@ -116,6 +141,8 @@ function toSalesReport(row) {
     reportStartDate: row.report_start_date,
     reportEndDate: row.report_end_date,
     totalRevenueAmount: row.total_revenue_amount,
+    orderCount: row.order_count,
+    paymentMethodTotals: row.payment_method_totals,
     reportGeneratedTimestamp: row.report_generated_timestamp,
   };
 }
