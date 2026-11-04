@@ -2,11 +2,7 @@
 //
 // POS-56: list the audit log with an order filter and a date filter, so the
 //         admin can audit any order.
-//
-// Backend operations (see API_CONTRACT_additions.md):
-//   listTransactionLogs({ orderId?, from?, to? })   transactions.js
-//   listStaffAccounts()                             staff.js — only to show
-//     names instead of ids in the "By" column; if it fails the ids are shown.
+// POS-75 export transaction-log to csv file
 
 import { listTransactionLogs } from './backend/services/transactions.js';
 import { listStaffAccounts } from './backend/services/staff.js';
@@ -23,6 +19,37 @@ export function buildFilters({ orderId, from, to }) {
   if (from) filters.from = new Date(`${from}T00:00:00`).toISOString();
   if (to) filters.to = new Date(`${to}T23:59:59.999`).toISOString();
   return filters;
+}
+
+const CSV_COLUMNS = ['Time', 'Order', 'Event', 'By', 'Staff ID'];
+
+function csvCell(value) {
+  let text = String(value ?? '');
+  // a cell that starts with = + - @ would be run as a formula by Excel/Sheets
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+export function logsToCSV(logs, staffNames = new Map()) {
+  const rows = logs.map((log) => [
+    log.transactionTimestamp,
+    log.associatedOrderIdentifier,
+    log.transactionTypeCategory,
+    staffNames.get(log.performedByStaffAccountIdentifier) ??'',
+    log.performedByStaffAccountIdentifier,
+  ]);
+  return [CSV_COLUMNS, ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
+}
+
+function  downloadCsv (filename, csvText) {
+  const url  = URL.createObjectURL(new Blob(['',csvText], { type: 'text/csv;charset=utf-8;' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export const transactionLogScreen = {
@@ -62,9 +89,12 @@ export const transactionLogScreen = {
     const fromInput = document.getElementById('log-from');
     const toInput = document.getElementById('log-to');
     const applyBtn = document.getElementById('log-apply-btn');
+    const exportBtn = document.getElementById('log-export-btn');
     const rows = document.getElementById('log-rows');
     const status = document.getElementById('log-status');
     let staffNames = new Map();
+    let shownLogs = [];
+    let showFilters = [];
 
     function render(logs) {
       rows.innerHTML = '';
@@ -97,20 +127,25 @@ export const transactionLogScreen = {
       }
 
       applyBtn.disabled = true;
+      exportBtn.disabled = true;
       const filters = buildFilters({ orderId: orderInput.value, from: fromInput.value, to: toInput.value });
       const { data, error } = await callService(listTransactionLogs, 'The transaction log', filters);
       applyBtn.disabled = false;
 
       if (!document.body.contains(rows)) return;
       if (error) {
+        shownLogs = [];
         status.className = 'error';
         status.textContent = error.message;
         rows.innerHTML = '';
         return;
       }
+      shownLogs = data ?? [];
+      showFilters = filters;
+      exportBtn.disabled = shownLogs.length === 0;
       status.className = '';
       status.textContent = '';
-      render(data ?? []);
+      render(shownLogs);
     }
 
     form.addEventListener('submit', (event) => {
@@ -123,6 +158,11 @@ export const transactionLogScreen = {
       fromInput.value = '';
       toInput.value = '';
       load();
+    });
+
+   exportBtn.addEventListener('click', () => {
+      if (!shownLogs.length) return;
+      downloadCsv(exportFileName(shownFilters), logsToCsv(shownLogs, staffNames));
     });
 
     // Staff names are a nice-to-have for the "By" column; ids are shown if this fails.
