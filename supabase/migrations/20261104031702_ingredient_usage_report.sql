@@ -1,4 +1,4 @@
--- 0019_ingredient_usage_report.sql
+-- 0020_ingredient_usage_report.sql
 -- POS-78: report how much of each ingredient was used during a date range.
 --
 -- Usage is calculated from paid orders and their menu-item recipe mappings.
@@ -53,10 +53,10 @@ begin
             items.associated_order_identifier
         and payment.payment_completion_status
             in ('Completed', 'Refunded')
-        and payment.payment_processing_timestamp
-            >= range_start::timestamptz
-        and payment.payment_processing_timestamp
-            < (range_end + 1)::timestamptz
+        and (
+          payment.payment_processing_timestamp
+          at time zone 'America/Los_Angeles'
+        )::date between range_start and range_end
     )
 
     group by

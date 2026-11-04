@@ -223,7 +223,7 @@ values (
   'Credit/Debit',
   3.00,
   'Refunded',
-  '2026-11-02 23:59:00+00'
+  '2026-11-03 04:00:00+00'
 );
 
 
@@ -274,7 +274,7 @@ values (
   'Cash',
   25.00,
   'Completed',
-  '2026-11-03 00:00:00+00'
+  '2026-11-03 12:00:00+00'
 );
 
 
@@ -450,7 +450,7 @@ end $$;
 
 
 -- -------------------------------------------------------------------------
--- 5. End date is inclusive
+-- 5. An 8 PM Los Angeles payment counts on its local calendar date
 -- -------------------------------------------------------------------------
 
 do $$
@@ -468,12 +468,12 @@ begin
 
   if v_quantity is distinct from 0.04 then
     raise exception
-      'FAIL 5: expected end-date bean usage 0.04, got %',
+      'FAIL 5: expected 8 PM Los Angeles payment to produce 0.04 bean usage, got %',
       v_quantity;
   end if;
 
   raise notice
-    'PASS 5: end date is inclusive';
+    'PASS 5: 8 PM Los Angeles payment counts on its local date';
 end $$;
 
 
