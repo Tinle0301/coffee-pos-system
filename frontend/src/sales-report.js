@@ -4,6 +4,7 @@
 //         Styles live in report.css, loaded by this screen, so the shared
 //         style.css is untouched.
 // POS-54: Export downloads the report shown on screen as a CSV file.
+// POS 76: Past report
 //
 // Backend operations (see API_CONTRACT_additions.md):
 //   generateSalesReport(type, startDate, endDate)  reports.js
@@ -12,7 +13,9 @@
 import { generateSalesReport } from './backend/services/reports.js';
 import { exportReportAsCsv } from './backend/services/exports.js';
 import { callService, todayISO, toISODate, parseISODate, formatMoney, formatDateTime } from './admin-common.js';
+import * as reportService from './backend/services/reports.js'
 
+const PAST_WEEK_SHOWN = 8
 /** Monday–Sunday week that contains the given YYYY-MM-DD date. */
 export function weekRange(iso) {
   const date = parseISODate(iso);
@@ -83,6 +86,17 @@ export const salesReportScreen = {
           <p class="report-generated" id="report-generated"></p>
           <button type="button" id="report-export-btn" class="report-export">Export CSV</button>
         </section>
+
+        <section class="report-past">
+          <h3>Past reports</h3>
+          <p id="past-status" role="status"></p>
+          <table class="menu-table report-past-table">
+            <thead>
+              <tr><th>Week</th><th>Total revenue</th></tr>
+            </thead>
+            <tbody id="past-rows"></tbody>
+          </table>
+        </section>
       </div>
     `;
   },
@@ -96,6 +110,8 @@ export const salesReportScreen = {
     const status = document.getElementById('report-status');
     const result = document.getElementById('report-result');
     const exportBtn = document.getElementById('report-export-btn');
+    const pastRows = document.getElementById('past-rows');
+    const pastStatus = document.getElementById('past-status');
     let currentReport = null;
 
     dateInput.value = todayISO();
@@ -104,6 +120,49 @@ export const salesReportScreen = {
       status.className = 'error';
       status.textContent = message;
     }
+
+    // POS 76
+    function renderPast(reports) {
+      pastRows.innerHTML = '';
+      const weeks = reports
+        .filter((report) => report.reportGenerationType === 'Weekly')
+        .sort((a,b) => b.reportStartDate.localeCompare(a.reportStartDate))
+        .slice(0, PAST_WEEKS_SHOWN);
+
+      if (!weeks.length) {
+          pastRows.innerHTML = '<tr><td colspan="2" class="order-empty">No saved weekly reports yet.</td></tr>';
+          return;
+      }
+      for (const report of weeks) {
+        const tr = document.createElement('tr');
+        const period = document.createElement('td');
+        period.textContent = `${report.reportStartDate} to ${report.reportEndDate}`;
+        const total = document.createElement('td');
+        total.className = 'report-past-total';
+        total.textContent = formatMoney(report.totalRevenueAmount);
+        tr.appendChild(period);
+        pastRows.appendChild(tr);
+
+      }
+    }
+
+    async function loadPast(){
+      const {data,error} = await callService(reportService.listSalesReports ?? (() => undefined),
+      'Past reports'
+      );
+      if (!document.body.contains(pastRows)) return;
+      if (error) {
+        pastStatus.className ='error';
+        pastStatus.textContent = error.message;
+        pastRows.innerHTML = '';
+        return;
+      }
+      pastStatus.className = '';
+      pastStatus.textContent = '';
+      renderPast(data ?? []);
+    }
+    loadPast();
+
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
