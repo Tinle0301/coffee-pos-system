@@ -96,6 +96,114 @@ export async function generateSalesReport(reportGenerationType, startDate, endDa
   return { data: toSalesReport(data), error: null };
 }
 
+
+// =====================================================
+// POS-64: BEST SELLERS AND BUSIEST HOURS
+// =====================================================
+
+/**
+ * Returns sales activity for an inclusive date range.
+ *
+ * @param {string} startDate - YYYY-MM-DD
+ * @param {string} endDate - YYYY-MM-DD
+ */
+export async function getSalesActivity(startDate, endDate) {
+
+  // STEP 1: Validate both dates before querying Supabase.
+  const isCalendarDate = (value) => {
+    if (typeof value !== 'string' ||
+        !DATE_PATTERN.test(value)) {
+      return false;
+    }
+
+    const date = new Date(`${value}T00:00:00Z`);
+
+    return !Number.isNaN(date.valueOf()) &&
+      date.toISOString().slice(0, 10) === value;
+  };
+
+  if (!isCalendarDate(startDate) ||
+      !isCalendarDate(endDate) ||
+      startDate > endDate) {
+    return {
+      data: null,
+      error: {
+        code: 'INVALID_DATE_RANGE',
+        message: 'Choose a valid start and end date (start must be on or before end).',
+      },
+    };
+  }
+
+  // STEP 2: Call both PostgreSQL functions.
+  // Catch unexpected network/client failures.
+  let itemsResult;
+  let hoursResult;
+
+  try {
+    [itemsResult, hoursResult] = await Promise.all([
+      supabase.rpc('best_selling_items_report', {
+        range_start: startDate,
+        range_end: endDate,
+      }),
+
+      supabase.rpc('busiest_hours_report', {
+        range_start: startDate,
+        range_end: endDate,
+      }),
+    ]);
+  } catch {
+    return {
+      data: null,
+      error: {
+        code: 'LOOKUP_FAILED',
+        message: 'Could not load sales activity for this date range.',
+      },
+    };
+  }
+
+  // STEP 3: Handle database or permission errors.
+  if (itemsResult.error || hoursResult.error) {
+    const message =
+      `${itemsResult.error?.message || ''} ${hoursResult.error?.message || ''}`;
+
+    const unauthorized =
+      message.includes('UNAUTHORIZED') ||
+      itemsResult.error?.code === '42501' ||
+      hoursResult.error?.code === '42501';
+
+    return {
+      data: null,
+      error: unauthorized
+        ? {
+            code: 'UNAUTHORIZED',
+            message: 'Only active admins can view sales activity.',
+          }
+        : {
+            code: 'LOOKUP_FAILED',
+            message: 'Could not load sales activity for this date range.',
+          },
+    };
+  }
+
+  // STEP 4: Convert database columns into JS-friendly objects.
+  return {
+    data: {
+      bestSellers: (itemsResult.data ?? []).map((row) => ({
+        menuItemIdentifier: row.menu_item_identifier,
+        menuItemName: row.menu_item_name,
+        quantitySold: Number(row.quantity_sold),
+        grossItemRevenue: Number(row.gross_item_revenue),
+      })),
+
+      busiestHours: (hoursResult.data ?? []).map((row) => ({
+        hourOfDay: Number(row.hour_of_day),
+        orderCount: Number(row.order_count),
+      })),
+    },
+    error: null,
+  };
+}
+
 /**
  * @returns {Promise<{ data: import('../models/salesReport.js').SalesReport[] | null, error: ServiceError | null }>}
  */

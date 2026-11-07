@@ -404,6 +404,47 @@ question.
   (`Cash`, `Credit/Debit`, `Mobile Pay`), `0` for a method with no
   transactions in range.
 
+### getSalesActivity (POS-64)
+- **Screen(s):** Admin Sales Report (frontend integration by frontend team)
+- **Backend module:** `backend/services/reports.js`
+- **Input:**
+  - startDate: `string` (`YYYY-MM-DD`, inclusive)
+  - endDate: `string` (`YYYY-MM-DD`, inclusive)
+- **Returns:** `{ data, error }`:
+  ```json
+  {
+    "data": {
+      "bestSellers": [
+        {
+          "menuItemIdentifier": "uuid",
+          "menuItemName": "Latte",
+          "quantitySold": 6,
+          "grossItemRevenue": 30.00
+        }
+      ],
+      "busiestHours": [
+        {
+          "hourOfDay": 9,
+          "orderCount": 3
+        }
+      ]
+    },
+    "error": null
+  }
+  ```
+- **Errors:**
+  - invalid or reversed dates -> `INVALID_DATE_RANGE`
+  - non-admin user -> `UNAUTHORIZED`
+  - database request failure -> `LOOKUP_FAILED`
+- **Notes:**
+  - Uses `America/Los_Angeles` dates and hours.
+  - Returns up to 10 best-selling items by quantity.
+  - Returns all 24 hourly buckets, including zero-order hours.
+  - Includes Completed and Refunded payments; excludes unpaid orders.
+  - Attributes each order to its earliest qualifying payment.
+  - Reporting functions are read-only.
+  - Frontend integration is outside the scope of this backend PR.
+
 ### listSalesReports
 - **Screen(s):** Admin Sales Report
 - **Backend module:** `backend/services/reports.js`
