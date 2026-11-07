@@ -124,6 +124,19 @@ question.
 - **Errors:**
   - no order with that id -> `ORDER_NOT_FOUND`
 
+### listOrders
+- **Screen(s):** Today's Orders
+- **Backend module:** `backend/services/orders.js` (POS-77)
+- **Input:**
+  - range: `{ from: string, to: string }` (ISO timestamps, `to` exclusive)
+- **Returns:** orders created in the range, newest first, each in the same
+  shape as `CreateNewOrder` plus `payment`: `{ paymentMethodType,
+  paymentAmountValue, paymentCompletionStatus, paymentProcessingTimestamp }`
+  or `null` if unpaid. Admins see every order; Baristas only their own (RLS).
+- **Errors:**
+  - missing or bad range -> `INVALID_DATE_RANGE`
+  - query fails -> `LOOKUP_FAILED`
+
 ### CancelExistingOrder
 - **Screen(s):** Active Orders Queue
 - **Backend module:** `backend/services/orders.js` (calls the
