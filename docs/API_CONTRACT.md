@@ -307,6 +307,33 @@ question.
 - **Errors:**
   - no payment with that id -> `PAYMENT_NOT_FOUND`
 
+### processRefund
+- **Screen(s):** Admin Refund screen
+- **Backend module:** `backend/services/refunds.js` (calls the `process_refund` database function, POS-31)
+- **Input:**
+  - paymentId: `string` (uuid)
+  - refundType: `'Full' | 'Partial'`
+  - amount: `number` -- must equal the payment amount exactly for `Full`, or be greater than `0` and strictly less than it for `Partial`
+- **Returns:** an object with refundTransactionIdentifier, associatedPaymentIdentifier, refundAmountValue, refundTypeCategory ('Full' or 'Partial'), and refundProcessingTimestamp
+- **Errors:**
+  - no payment with that id -> `PAYMENT_NOT_FOUND`
+  - payment already refunded -> `ALREADY_REFUNDED`
+  - payment isn't `Completed` -> `INVALID_PAYMENT_STATUS`
+  - `refundType` isn't `Full` or `Partial` -> `INVALID_REFUND_TYPE`
+  - amount is `<= 0`, or a `Partial` amount isn't less than the payment -> `INVALID_REFUND_AMOUNT`
+  - a `Full` amount doesn't equal the payment amount -> `AMOUNT_MISMATCH`
+  - caller is not an admin -> `UNAUTHORIZED`
+- **Note:** this is the one tested function POS-68 asks for -- the Refund screen currently calls supabase.rpc('process_refund', ...) directly from frontend/src/refund-api.js, which this is meant to replace. Error messages match frontend/src/refund-errors.js's existing wording, with one fix: that module has no entry for AMOUNT_MISMATCH (a real code process_refund can raise), so it was falling through to a generic message -- this adds it.
+
+### getRefund
+- **Screen(s):** Admin Refund screen
+- **Backend module:** `backend/services/refunds.js`
+- **Input:**
+  - refundId: `string` (uuid)
+- **Returns:** same shape as `processRefund`
+- **Errors:**
+  - no refund with that id -> `REFUND_NOT_FOUND`
+
 ### listActiveQueueEntries
 - **Screen(s):** Active Orders Queue
 - **Backend module:** `backend/services/queue.js`
@@ -452,9 +479,9 @@ Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`
 `orderItems.js` (POS-9), `payments.js` and `queue.js` (POS-19),
 `transactions.js` (POS-33), `reports.js` (POS-46), `exportReportAsCsv` in
 `exports.js` (POS-47), `staff.js` (POS-43), `inventory.js` (POS-44),
-and the `create_order` (POS-8), `checkout_order` (POS-18/POS-39),
-and `process_refund` (POS-31) database functions. Everything listed below
-is an empty stub.
+`refunds.js` (POS-68), and the `create_order` (POS-8),
+`checkout_order` (POS-18/POS-39), and `process_refund` (POS-31) database
+functions. Everything listed below is an empty stub.
 
 ## Remaining operations (signatures TBD as they're implemented)
 
@@ -465,8 +492,6 @@ format above. Placeholder list from `backend/services/`:
   in `orders.js` for why (item-level and status changes already have
   homes elsewhere, order-level "changes" doesn't have settled semantics)
 - MarkOrderAsInProgress (`orderStatus.js`)
-- processRefund (`refunds.js`) — the `process_refund` database function
-  (POS-31) is done; this JS wrapper around it isn't
 - exportReportAsPdf (`exports.js`)
 
 ---
