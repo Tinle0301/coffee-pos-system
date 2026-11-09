@@ -167,7 +167,13 @@ select set_config('request.jwt.claims', '{}', true);
 do $$
 declare n integer;
 begin
-  select count(*) into n from orders;
+  -- POS-61: signed-out callers have no table privilege at all now, so being
+  -- refused is a pass too (stricter than seeing 0 rows).
+  begin
+    select count(*) into n from orders;
+  exception when insufficient_privilege then
+    n := 0;
+  end;
   if n <> 0 then raise exception 'FAIL 12a: anon can see % orders', n; end if;
   begin
     insert into orders (order_subtotal_amount, order_tax_amount, order_total_amount, created_by_staff_identifier)
