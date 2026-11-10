@@ -14,6 +14,7 @@ import { inventoryScreen } from './inventory.js';
 import { salesReportScreen } from './sales-report.js';
 import { staffManagerScreen } from './staff-manager.js';
 import { transactionLogScreen } from './transaction-log.js';
+import { reportsDashboardScreen } from './reports-dashboard.js';
 
 // Global application memory state — staffId starts null
 const state = {
@@ -34,13 +35,14 @@ const routes = {
   'sales-report': salesReportScreen,
   staff: staffManagerScreen,
   transactions: transactionLogScreen,
+  reports: reportsDashboardScreen,
   admin: adminHomeScreen,
   inventory: inventoryScreen
 };
 
 // Screens only an Admin may open. Hiding a button isn't security (RLS is),
 // but don't draw an admin screen to a barista.
-const ADMIN_ONLY = new Set(['admin', 'refund', 'menu', 'inventory', 'sales-report', 'staff', 'transactions']);
+const ADMIN_ONLY = new Set(['admin', 'refund', 'menu', 'inventory', 'sales-report', 'staff', 'transactions', 'reports']);
 
 const appRoot = document.querySelector('#app');
 let contentRoot;
