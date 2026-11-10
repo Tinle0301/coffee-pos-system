@@ -5,6 +5,7 @@ import { refundScreen } from './refund.js';
 import { logoutComponent } from './logout.js';
 import { renderLoginScreen } from './login.js';
 import { session } from './backend/auth.js';
+import { startAuthSync } from './auth-sync.js';
 
 import { paymentScreen } from './payment.js';
 import { queueScreen } from './queue.js';
@@ -115,6 +116,13 @@ async function boot() {
   } else {
     showLogin();
   }
+
+  // POS-60: if another tab logs in as someone else or logs out, reload so
+  // this tab shows the right person instead of failing their next order.
+  startAuthSync({
+    getCurrentStaffId: () => state.staffId,
+    onUserChanged: () => window.location.replace(window.location.pathname),
+  });
 }
 
 boot();

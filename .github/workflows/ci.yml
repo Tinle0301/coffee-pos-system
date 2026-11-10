@@ -25,6 +25,8 @@ jobs:
               - '.github/workflows/ci.yml'
             frontend:
               - 'frontend/**'
+              - 'scripts/check-frontend.mjs'
+              - '.github/workflows/ci.yml'
 
   backend-copy:
     name: Backend copy in sync
@@ -63,14 +65,30 @@ jobs:
         run: bash scripts/run-sql-checks.sh
 
   frontend:
-    name: Frontend
+    name: Frontend checks and tests
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/src
     steps:
       - uses: actions/checkout@v4
 
-      - name: Passing stub
-        run: |
-          echo "Frontend stack not chosen yet — see docs/FRONTEND_DECISION.md."
-          echo "Fill this job in (lint/build/test) once option A/B/C/D is decided."
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/src/package-lock.json
+
+      # POS-59: conflict markers, syntax errors and broken imports each blank
+      # the whole live site, so check for them first (takes a second).
+      - name: Check frontend files (conflict markers, syntax, imports)
+        run: node ../../scripts/check-frontend.mjs
+
+      - name: Install
+        run: npm ci
+
+      # POS-59: every *.test.js in frontend/src. Any failing test fails the PR.
+      - name: Run frontend tests
+        run: npx vitest run
