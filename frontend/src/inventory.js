@@ -4,6 +4,7 @@
 // minimum stock threshold. Read-only for now; admin-only via the route guard
 // in main.js (RLS is the real control).
 import { listInventory, restockInventory } from './inventory-api.js';
+import { STOCK_LEVELS, stockLevel, sortBySeverity, countByLevel } from './stock-level.js';
 
 function escapeHtml(text) {
   return String(text ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -12,33 +13,8 @@ function escapeHtml(text) {
 // 1.5 -> "1.5", 25 -> "25", 0.04 -> "0.04"
 const formatQty = (n) => String(Number(Number(n).toFixed(2)));
 
-export const STOCK_LEVELS = {
-  out: { label: 'Out of stock', rank: 0 },
-  low: { label: 'Low stock', rank: 1 },
-  ok: { label: 'In stock', rank: 2 },
-};
-
-// out: nothing left; low: at or below the threshold; ok: above it.
-export function stockLevel(item) {
-  const qty = Number(item.availableQuantityValue);
-  const min = Number(item.minimumStockThreshold);
-  if (qty <= 0) return 'out';
-  if (qty <= min) return 'low';
-  return 'ok';
-}
-
-// Worst first, then by name.
-export function sortBySeverity(items) {
-  return [...items].sort((a, b) =>
-    STOCK_LEVELS[stockLevel(a)].rank - STOCK_LEVELS[stockLevel(b)].rank
-    || String(a.inventoryItemName).localeCompare(String(b.inventoryItemName)));
-}
-
-export function countByLevel(items) {
-  const counts = { out: 0, low: 0, ok: 0 };
-  items.forEach((i) => { counts[stockLevel(i)] += 1; });
-  return counts;
-}
+// The stock rules live in stock-level.js; re-exported so existing imports keep working.
+export { STOCK_LEVELS, stockLevel, sortBySeverity, countByLevel };
 
 // Bar fills to 100% at 3x the threshold; a threshold of 0 just shows full when in stock.
 function fillPercent(item) {
