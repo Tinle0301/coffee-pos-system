@@ -141,3 +141,20 @@
 @media (prefers-reduced-motion: reduce) {
   .admin-home .admin-tile { animation: none; transition: none; }
 }
+
+/* Live low-stock badge on the Inventory tile */
+.admin-tile-alert {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  padding: 3px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  color: var(--success-color);
+  background: rgba(92, 122, 94, 0.14);
+}
+.admin-tile-alert[hidden] { display: none; }
+.admin-tile-alert.is-low { color: var(--accent-hover); background: rgba(192, 138, 46, 0.22); }
+.admin-tile-alert.is-out { color: #fff; background: var(--danger-color); }
