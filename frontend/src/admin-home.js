@@ -1,6 +1,10 @@
 // admin-home.js — the Admin's landing screen: one tile per admin screen.
+// The Inventory tile also shows a live count of low-stock items (see below).
 // To add a screen to this page, set its `route` (the key in main.js's routes);
 // tiles with `route: null` show as "Coming soon". Styles live in admin-home.css.
+
+import { listInventory } from './inventory-api.js';
+import { countByLevel } from './stock-level.js';
 
 export const ADMIN_SECTIONS = [
   {
@@ -28,6 +32,7 @@ export const ADMIN_SECTIONS = [
     heading: 'People and reports',
     tiles: [
       { route: 'staff', title: 'Staff Accounts', description: 'See staff and deactivate accounts.' },
+      { route: 'reports', title: 'Reports Dashboard', description: 'Best sellers, busiest hours and payment breakdown at a glance.' },
       { route: 'sales-report', title: 'Sales Reports', description: 'Daily and weekly sales summaries.' },
     ],
   },
@@ -52,6 +57,7 @@ function renderTile(tile, index) {
       <span class="admin-tile-title">${escapeHtml(tile.title)}</span>
       <span class="admin-tile-desc">${escapeHtml(tile.description)}</span>
       <span class="admin-tile-go" aria-hidden="true">Open &rarr;</span>
+      ${tile.route === 'inventory' ? '<span class="admin-tile-alert" data-alert="inventory" aria-live="polite" hidden></span>' : ''}
     </button>`;
 }
 
@@ -88,9 +94,42 @@ export const adminHomeScreen = {
       </div>`;
   },
 
-  init(navigate) {
+  async init(navigate) {
     document.querySelectorAll('.admin-tile[data-route]').forEach((tile) => {
       tile.addEventListener('click', () => navigate(tile.dataset.route));
     });
+    await showInventoryAlert();
   },
 };
+
+/**
+ * What the Inventory tile's badge says. "Low" counts every item at or below its
+ * reorder level, including ones that are completely out (same rule as the
+ * Inventory screen and the backend's POS-57 report).
+ * @returns {{ text: string, level: 'ok' | 'low' | 'out' }}
+ */
+export function inventoryAlert(items) {
+  const { out, low } = countByLevel(items);
+  const lowTotal = out + low;
+  if (lowTotal === 0) return { text: 'All stocked', level: 'ok' };
+  return { text: out ? `${lowTotal} low \u00b7 ${out} out` : `${lowTotal} low`, level: out ? 'out' : 'low' };
+}
+
+// Loads stock levels and fills the Inventory tile's badge. A failure just
+// leaves the badge hidden: Admin Home still works, and nothing alarming shows.
+async function showInventoryAlert() {
+  const badge = document.querySelector('[data-alert="inventory"]');
+  if (!badge) return; // not an admin view, or the tile isn't on the page
+  try {
+    const { data, error } = await listInventory();
+    if (error || !Array.isArray(data)) return;
+    const el = document.querySelector('[data-alert="inventory"]'); // may have navigated away
+    if (!el) return;
+    const { text, level } = inventoryAlert(data);
+    el.textContent = text;
+    el.className = `admin-tile-alert is-${level}`;
+    el.hidden = false;
+  } catch {
+    // leave the badge hidden
+  }
+}
