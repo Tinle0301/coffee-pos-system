@@ -16,6 +16,8 @@ import { staffManagerScreen } from './staff-manager.js';
 import { transactionLogScreen } from './transaction-log.js';
 import { reportsDashboardScreen } from './reports-dashboard.js';
 
+import { todaysOrdersScreen } from './todays-orders.js';
+
 // Global application memory state — staffId starts null
 const state = {
   currentOrder: [], // filled by the New Order screen (new-order.js)
@@ -37,7 +39,8 @@ const routes = {
   transactions: transactionLogScreen,
   reports: reportsDashboardScreen,
   admin: adminHomeScreen,
-  inventory: inventoryScreen
+  inventory: inventoryScreen,
+  'todays-orders': todaysOrdersScreen,
 };
 
 // Screens only an Admin may open. Hiding a button isn't security (RLS is),
@@ -55,6 +58,7 @@ function renderAuthenticatedShell(staffName, isAdmin = false) {
       <header class="app-header">
         <span class="app-header-title">Coffee POS</span>
         <span class="app-header-employee">${staffName || ''}</span>
+        <button id="header-todays-orders-btn" class="header-nav-btn">Today's Orders</button>
         ${isAdmin ? '<button id="header-admin-home-btn" class="header-nav-btn">Admin Home</button>' : ''}
         <button id="header-active-orders-btn" class="header-nav-btn">Active Orders</button>
         <button id="global-logout-btn">Log Out</button>
@@ -70,6 +74,8 @@ function renderAuthenticatedShell(staffName, isAdmin = false) {
   if (activeOrdersBtn) {
     activeOrdersBtn.addEventListener('click', () => navigate('queue'));
   }
+  const todaysOrdersBtn = document.getElementById('header-todays-orders-btn');
+  if (todaysOrdersBtn) todaysOrdersBtn.addEventListener('click', () => navigate('todays-orders'));
 }
 
 function renderLoginShell() {

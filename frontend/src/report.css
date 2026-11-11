@@ -111,3 +111,10 @@
 .report-export:hover:not(:disabled) {
   background: #4a6249;
 }
+
+.report-past { margin-top: 32px; }
+.report-past-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.report-past-head select { min-height: 44px; padding: 0 10px; font-size: 1rem; }
+.report-past-table { width: 100%; }
+.report-past-total { text-align: right; font-variant-numeric: tabular-nums; }
+.report-past-open { min-height: 44px; margin: 0; width: auto; }
