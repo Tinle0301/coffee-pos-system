@@ -19,8 +19,8 @@ import { callService, formatDateTime } from './admin-common.js';
 export function buildFilters({ orderId, from, to }) {
   const filters = {};
   if (orderId?.trim()) filters.orderId = orderId.trim();
-  if (from) filters.from = from;
-  if (to) filters.to = to;
+  if (from) filters.from = new Date(${from}T00:00:00).toISOString();
+  if (to) filters.to = new Date(${to}T23:59:59.999).toISOString();
   return filters;
 }
 
