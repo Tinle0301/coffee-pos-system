@@ -40,7 +40,7 @@ const routes = {
   reports: reportsDashboardScreen,
   admin: adminHomeScreen,
   inventory: inventoryScreen,
-  'todays-orders': todayOrdersScreen,
+  'todays-orders': todaysOrdersScreen,
 };
 
 // Screens only an Admin may open. Hiding a button isn't security (RLS is),
