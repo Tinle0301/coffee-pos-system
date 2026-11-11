@@ -192,6 +192,13 @@ queue_entry_status_type: Pending
 | reportEndDate                                | report_end_date                   |
 | totalRevenueAmount                             | total_revenue_amount              |
 | reportGeneratedTimestamp                         | report_generated_timestamp        |
+| *(not in 491A — see note)*               | order_count                       |
+| *(not in 491A — see note)*               | payment_method_totals             |
+
+**Note (POS-66):** `order_count` and `payment_method_totals` are additive
+beyond the original 491A SalesReport entity — a breakdown of
+`total_revenue_amount` by payment method, plus how many distinct orders it
+covers.
 
 Example row:
 ```
@@ -200,6 +207,8 @@ report_generation_type: Daily
 report_start_date: 2026-01-01
 report_end_date: 2026-01-01
 total_revenue_amount: 142.50
+order_count: 19
+payment_method_totals: {"Cash": 50.00, "Credit/Debit": 72.50, "Mobile Pay": 20.00}
 ```
 
 ---

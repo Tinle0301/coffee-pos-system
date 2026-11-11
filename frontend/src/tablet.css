@@ -1,0 +1,122 @@
+/* tablet.css — POS-?? Barista: touch-sized buttons + counter-tablet layout.
+   Loaded after style.css. Targets a ~10" tablet (1024x768 landscape,
+   768x1024 portrait). Every tap target is at least 44x44px, nothing relies
+   on hover, and taps respond instantly (no double-tap zoom delay). */
+
+/* ---- Touch behaviour for every control ---- */
+button,
+.option-pill,
+.category-tab,
+.menu-toggle {
+  touch-action: manipulation;          /* no 300ms delay / double-tap zoom */
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Pressed feedback replaces hover, which doesn't exist on a touchscreen. */
+button:active:not(:disabled),
+.option-pill:active,
+.category-tab:active {
+  transform: scale(0.97);
+  filter: brightness(0.93);
+}
+button,
+.option-pill {
+  transition: transform 0.08s ease, filter 0.08s ease;
+}
+
+/* ---- Header: never wrap, never stretch ---- */
+.app-header-title,
+.app-header-employee {
+  white-space: nowrap;
+}
+.app-header .header-nav-btn,
+.app-header #global-logout-btn {
+  width: auto;
+  min-width: 96px;
+  min-height: 48px;
+  margin: 0 0 0 8px;
+  padding: 0 18px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.app-header .header-nav-btn:first-of-type {
+  margin-left: auto;                    /* push the buttons to the right */
+}
+
+/* ---- Wider workspace on a tablet ---- */
+@media (min-width: 900px) {
+  #app { max-width: 1180px; }
+  .app-shell { max-width: none; }
+  .new-order-layout { grid-template-columns: minmax(0, 1fr) 380px; }
+}
+
+/* Tablet portrait: keep menu and order side by side instead of stacking */
+@media (min-width: 700px) and (max-width: 899px) {
+  .new-order-layout { grid-template-columns: minmax(0, 1fr) 300px; }
+}
+
+/* The order stays on screen while the menu scrolls */
+@media (min-width: 700px) {
+  .order-panel {
+    position: sticky;
+    top: 12px;
+    align-self: start;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+}
+
+/* ---- Menu list: roomy rows, big Add button ---- */
+.menu-table td { padding-top: 10px; padding-bottom: 10px; }
+.menu-row-name { font-size: 1.1rem; }
+.menu-table .add-btn,
+#queue-list .add-btn {
+  width: auto;
+  min-width: 80px;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 18px;
+  font-size: 1rem;
+}
+.category-tab { min-height: 48px; padding: 0 20px; font-size: 1.05rem; }
+
+/* ---- Order lines ---- */
+.qty-btn { min-width: 48px; min-height: 48px; }
+.order-line-edit { min-width: 64px; min-height: 48px; }
+.order-line-remove { min-width: 48px; min-height: 48px; font-size: 1.4rem; }
+.order-panel .btn-danger-outline { width: 100% !important; margin: 14px 0 0 !important; min-height: 52px; }
+
+/* ---- Options in dialogs and payment: big pills, big radios/checkboxes ---- */
+.option-pill {
+  min-height: 52px;
+  padding: 0 18px;
+  gap: 12px;
+  font-size: 1.05rem;
+}
+.option-pill input[type="radio"],
+.option-pill input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--accent-color);
+  flex: 0 0 auto;
+}
+.option-row, .option-col { gap: 12px; }
+.modal-actions button { min-height: 56px; margin: 0; }
+.modal-card { max-width: 480px; }
+
+/* ---- Payment ---- */
+#cash-received { min-height: 56px; font-size: 1.3rem; }
+#complete-sale-btn { min-height: 64px; font-size: 1.2rem; }
+
+/* ---- Active Orders (queue) ---- */
+#queue-list .order-line-actions button,
+#queue-list button { min-height: 52px; min-width: 110px; width: auto; margin: 0; }
+#queue-new-order-btn { width: 100%; min-height: 56px; }
+
+/* Respect reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  button, .option-pill { transition: none; }
+  button:active:not(:disabled), .option-pill:active, .category-tab:active { transform: none; }
+}

@@ -5,6 +5,7 @@ import { refundScreen } from './refund.js';
 import { logoutComponent } from './logout.js';
 import { renderLoginScreen } from './login.js';
 import { session } from './backend/auth.js';
+import { startAuthSync } from './auth-sync.js';
 
 import { paymentScreen } from './payment.js';
 import { queueScreen } from './queue.js';
@@ -13,6 +14,7 @@ import { inventoryScreen } from './inventory.js';
 import { salesReportScreen } from './sales-report.js';
 import { staffManagerScreen } from './staff-manager.js';
 import { transactionLogScreen } from './transaction-log.js';
+import { reportsDashboardScreen } from './reports-dashboard.js';
 
 // Global application memory state — staffId starts null
 const state = {
@@ -33,13 +35,14 @@ const routes = {
   'sales-report': salesReportScreen,
   staff: staffManagerScreen,
   transactions: transactionLogScreen,
+  reports: reportsDashboardScreen,
   admin: adminHomeScreen,
   inventory: inventoryScreen
 };
 
 // Screens only an Admin may open. Hiding a button isn't security (RLS is),
 // but don't draw an admin screen to a barista.
-const ADMIN_ONLY = new Set(['admin', 'refund', 'menu', 'inventory', 'sales-report', 'staff', 'transactions']);
+const ADMIN_ONLY = new Set(['admin', 'refund', 'menu', 'inventory', 'sales-report', 'staff', 'transactions', 'reports']);
 
 const appRoot = document.querySelector('#app');
 let contentRoot;
@@ -115,6 +118,13 @@ async function boot() {
   } else {
     showLogin();
   }
+
+  // POS-60: if another tab logs in as someone else or logs out, reload so
+  // this tab shows the right person instead of failing their next order.
+  startAuthSync({
+    getCurrentStaffId: () => state.staffId,
+    onUserChanged: () => window.location.replace(window.location.pathname),
+  });
 }
 
 boot();

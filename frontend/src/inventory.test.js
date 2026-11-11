@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { inventoryScreen, stockLevel, sortBySeverity, countByLevel } from './inventory.js';
-import { listInventory } from './inventory-api.js';
+import { inventoryScreen, stockLevel, sortBySeverity, countByLevel, validateRestockAmount } from './inventory.js';
+import { listInventory, restockInventory } from './inventory-api.js';
 
-vi.mock('./inventory-api.js', () => ({ listInventory: vi.fn() }));
+vi.mock('./inventory-api.js', () => ({ listInventory: vi.fn(), restockInventory: vi.fn() }));
 
 const item = (id, name, qty, min) => ({
   inventoryItemIdentifier: id, inventoryItemName: name,
@@ -130,5 +130,125 @@ describe('Inventory screen', () => {
     await mount();
     $('#inventory-back-btn').click();
     expect(navigate).toHaveBeenCalledWith('admin');
+  });
+});
+
+describe('validateRestockAmount', () => {
+  it('accepts positive numbers with up to two decimals', () => {
+    expect(validateRestockAmount('10')).toEqual({ value: 10 });
+    expect(validateRestockAmount(' 2.5 ')).toEqual({ value: 2.5 });
+    expect(validateRestockAmount('0.25')).toEqual({ value: 0.25 });
+  });
+
+  it.each(['', '  ', 'abc', '-5', '1,000', '1.234', '1e3'])('rejects "%s"', (raw) => {
+    expect(validateRestockAmount(raw).error).toBeTruthy();
+  });
+
+  it('rejects zero and absurdly large amounts', () => {
+    expect(validateRestockAmount('0').error).toContain('greater than zero');
+    expect(validateRestockAmount('10000').error).toContain('too much');
+    expect(validateRestockAmount('9999.99').value).toBe(9999.99);
+  });
+});
+
+describe('Inventory screen Restock', () => {
+  const $ = (s) => document.querySelector(s);
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+  const submit = () => $('#restock-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+  const type = (v) => { $('#restock-amount').value = v; $('#restock-amount').dispatchEvent(new Event('input')); };
+
+  async function mount() {
+    document.body.innerHTML = inventoryScreen.render();
+    await inventoryScreen.init(vi.fn());
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    listInventory.mockResolvedValue({ data: makeItems(), error: null });
+  });
+
+  it('has a Restock button on every row', async () => {
+    await mount();
+    expect(document.querySelectorAll('.inventory-restock-btn')).toHaveLength(4);
+  });
+
+  it('opens a dialog for the chosen item showing what is on hand', async () => {
+    await mount();
+    $('.inventory-restock-btn[data-item-id="3"]').click();
+    expect($('#restock-modal').hidden).toBe(false);
+    expect($('#restock-title').textContent).toBe('Restock Blueberry Muffins (each)');
+    expect($('#restock-current').textContent).toContain('0 on hand');
+  });
+
+  it('previews the new total while typing', async () => {
+    await mount();
+    $('.inventory-restock-btn[data-item-id="4"]').click(); // Oat Milk 1.5
+    type('10');
+    expect($('#restock-preview').textContent).toBe('New total: 11.5');
+    type('abc');
+    expect($('#restock-preview').textContent).toBe('');
+  });
+
+  it('restocks through the service and updates the row, counts and message', async () => {
+    restockInventory.mockResolvedValue({ data: item('3', 'Blueberry Muffins (each)', 12, 3), error: null });
+    await mount();
+    $('.inventory-restock-btn[data-item-id="3"]').click();
+    type('12');
+    submit();
+    await tick();
+    expect(restockInventory).toHaveBeenCalledWith('3', 12);
+    expect($('#restock-modal').hidden).toBe(true);
+    expect($('#inventory-message').textContent).toBe('Added 12 to Blueberry Muffins (each). Now 12 on hand.');
+    const nums = [...document.querySelectorAll('.inventory-count-num')].map((n) => n.textContent);
+    expect(nums).toEqual(['0', '2', '2']); // the out-of-stock item is now fine
+  });
+
+  it('shows an error under the box and does not call the service for bad input', async () => {
+    await mount();
+    $('.inventory-restock-btn[data-item-id="1"]').click();
+    type('-3');
+    submit();
+    await tick();
+    expect(restockInventory).not.toHaveBeenCalled();
+    expect($('#restock-amount-error').textContent).toBeTruthy();
+    expect($('#restock-modal').hidden).toBe(false);
+  });
+
+  it('ignores a second submit while saving', async () => {
+    let finish;
+    restockInventory.mockReturnValue(new Promise((r) => { finish = r; }));
+    await mount();
+    $('.inventory-restock-btn[data-item-id="1"]').click();
+    type('5');
+    submit();
+    submit();
+    expect(restockInventory).toHaveBeenCalledTimes(1);
+    expect($('#restock-save').disabled).toBe(true);
+    finish({ data: item('1', 'Espresso Beans (lb)', 30, 5), error: null });
+    await tick();
+    expect($('#restock-modal').hidden).toBe(true);
+  });
+
+  it('keeps the dialog open with the service message when restocking fails', async () => {
+    restockInventory.mockResolvedValue({ data: null, error: { code: 'UNAUTHORIZED', message: 'Only an admin can restock inventory.' } });
+    await mount();
+    $('.inventory-restock-btn[data-item-id="1"]').click();
+    type('5');
+    submit();
+    await tick();
+    expect($('#restock-modal').hidden).toBe(false);
+    expect($('#restock-error').textContent).toBe('Only an admin can restock inventory.');
+    expect($('#restock-amount').value).toBe('5');
+    expect($('#restock-save').disabled).toBe(false);
+    // the list is unchanged
+    expect(document.body.textContent).toContain('25 on hand');
+  });
+
+  it('Cancel closes the dialog without restocking', async () => {
+    await mount();
+    $('.inventory-restock-btn[data-item-id="1"]').click();
+    $('#restock-cancel').click();
+    expect($('#restock-modal').hidden).toBe(true);
+    expect(restockInventory).not.toHaveBeenCalled();
   });
 });

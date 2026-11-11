@@ -121,6 +121,64 @@ export async function RetrieveOrderByIdentifier(orderId) {
 }
 
 /**
+ * POS-77: orders created in a time range, newest first, each with its
+ * payment (or null if it hasn't been paid). The Today's Orders screen passes
+ * local midnight to the next local midnight.
+ *
+ * RLS decides what comes back: an Admin sees every order, a Barista only the
+ * orders they created (orders_select_own_or_admin).
+ *
+ * @param {{ from: string, to: string }} range ISO timestamps, `to` exclusive
+ * @returns {Promise<{ data: (import('../models/order.js').Order & { payment: {
+ *   paymentMethodType: string, paymentAmountValue: number,
+ *   paymentCompletionStatus: string, paymentProcessingTimestamp: string } | null })[] | null,
+ *   error: ServiceError | null }>}
+ */
+export async function listOrders({ from, to } = {}) {
+  if (!isValidTimestamp(from) || !isValidTimestamp(to) || new Date(from) >= new Date(to)) {
+    return { data: null, error: { code: 'INVALID_DATE_RANGE', message: 'Choose a valid start and end time.' } };
+  }
+
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*, payments(payment_method_type, payment_amount_value, payment_completion_status, payment_processing_timestamp)')
+    .gte('order_creation_timestamp', from)
+    .lt('order_creation_timestamp', to)
+    .order('order_creation_timestamp', { ascending: false });
+
+  if (error) {
+    return { data: null, error: { code: 'LOOKUP_FAILED', message: "Could not load today's orders." } };
+  }
+
+  return {
+    data: data.map((row) => ({ ...toOrder(row), payment: pickPayment(row.payments) })),
+    error: null,
+  };
+}
+
+function isValidTimestamp(value) {
+  return typeof value === 'string' && !Number.isNaN(new Date(value).getTime());
+}
+
+// An order normally has one payment. If there are more (e.g. a failed try,
+// then a good one), show the one that counts: Completed or Refunded first,
+// otherwise the newest.
+function pickPayment(payments) {
+  if (!Array.isArray(payments) || payments.length === 0) return null;
+  const newestFirst = [...payments].sort(
+    (a, b) => new Date(b.payment_processing_timestamp) - new Date(a.payment_processing_timestamp)
+  );
+  const chosen = newestFirst.find((p) => ['Completed', 'Refunded'].includes(p.payment_completion_status))
+    ?? newestFirst[0];
+  return {
+    paymentMethodType: chosen.payment_method_type,
+    paymentAmountValue: chosen.payment_amount_value,
+    paymentCompletionStatus: chosen.payment_completion_status,
+    paymentProcessingTimestamp: chosen.payment_processing_timestamp,
+  };
+}
+
+/**
  * create_order (0004_create_order.sql) raises exceptions shaped like
  * 'CODE: message' for every error it can produce. This unpacks that into
  * the { code, message } shape the rest of the contract uses. If the
