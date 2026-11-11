@@ -40,7 +40,11 @@ describe('POS-56: Transaction Log with order and date filters', () => {
     $('#log-filters').dispatchEvent(new Event('submit', { cancelable: true }));
     await flush();
 
-    expect(listTransactionLogs).toHaveBeenLastCalledWith({ orderId: 'ord-1', from: '2026-10-01', to: '2026-10-31' });
+    expect(listTransactionLogs).toHaveBeenLastCalledWith({
+      orderId: 'ord-1',
+      from: new Date('2026-10-01T00:00:00').toISOString(),      // start of the first day
+      to: new Date('2026-10-31T23:59:59.999').toISOString()     // end of the last day
+    });
     const cells = [...document.querySelectorAll('#log-rows td')].map((td) => td.textContent);
     expect(cells).toContain('order created');
     expect(cells).toContain('Alex Barista'); // staff id shown as a name
