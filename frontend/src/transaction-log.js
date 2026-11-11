@@ -19,8 +19,8 @@ import { callService, formatDateTime } from './admin-common.js';
 export function buildFilters({ orderId, from, to }) {
   const filters = {};
   if (orderId?.trim()) filters.orderId = orderId.trim();
-  if (from) filters.from = new Date(${from}T00:00:00).toISOString();
-  if (to) filters.to = new Date(${to}T23:59:59.999).toISOString();
+  if (from) filters.from = new Date(`${from}T00:00:00`).toISOString();
+  if (to) filters.to = new Date(`${to}T23:59:59.999`).toISOString();
   return filters;
 }
 
@@ -51,7 +51,7 @@ export function exportFileName({ from, to } = {}) {
 }
 
 function downloadCsv(fileName, csvText) {
-  const url = URL.createObjectURL(new Blob(['﻿', csvText], { type: 'text/csv;charset=utf-8' }));
+  const url = URL.createObjectURL(new Blob(['\uFEFF', csvText], { type: 'text/csv;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
   link.download = fileName;
@@ -151,7 +151,7 @@ export const transactionLogScreen = {
         return;
       }
       shownLogs = data ?? [];
-      shownFilters = filters;
+      shownFilters = { from: fromInput.value, to: toInput.value }; // picked dates, for the file name
       exportBtn.disabled = shownLogs.length === 0; // nothing to export
       status.className = '';
       status.textContent = '';
