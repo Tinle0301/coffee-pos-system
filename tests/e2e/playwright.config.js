@@ -7,6 +7,29 @@
 
 import { defineConfig, devices } from '@playwright/test';
 
+const LIVE_SITE = 'https://coffee-pos-system-omega.vercel.app';
+
+// An empty POS_BASE_URL means the live site. Anything else must be a full
+// http(s) address; fail right away with a clear message instead of every
+// test timing out on a page that never opened.
+function baseUrl() {
+  const raw = (process.env.POS_BASE_URL ?? '').trim();
+  if (!raw) return LIVE_SITE;
+  let url;
+  try {
+    url = new URL(raw);
+  } catch {
+    url = null;
+  }
+  if (!url || !['http:', 'https:'].includes(url.protocol) || /[<>]/.test(raw)) {
+    throw new Error(
+      `POS_BASE_URL is not a valid web address: "${raw}". Set it to the full preview URL ` +
+      `(e.g. https://coffee-pos-system-git-....vercel.app), or run "unset POS_BASE_URL" to test the live site.`
+    );
+  }
+  return url.origin;
+}
+
 export default defineConfig({
   testDir: '.',
   timeout: 60_000,
@@ -16,7 +39,7 @@ export default defineConfig({
   retries: 0,                    // a flaky step should be fixed, not retried
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: process.env.POS_BASE_URL ?? 'https://coffee-pos-system-omega.vercel.app',
+    baseURL: baseUrl(),
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

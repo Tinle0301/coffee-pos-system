@@ -23,7 +23,12 @@ test.skip(!EMAIL || !PASSWORD, 'Set POS_BARISTA_EMAIL and POS_BARISTA_PASSWORD t
 
 /** Log in from the Login screen and wait for the register to load. */
 async function logIn(page, email = EMAIL, password = PASSWORD) {
-  await page.goto('/');
+  const response = await page.goto('/');
+  expect(response?.ok(), `Could not open ${page.url()} (HTTP ${response?.status()}). Check POS_BASE_URL.`).toBeTruthy();
+  await expect(
+    page.locator('#login-email'),
+    `No Login screen at ${page.url()}. If it shows a Vercel login page, the preview is protected: test the live site instead (unset POS_BASE_URL).`
+  ).toBeVisible();
   await page.locator('#login-email').fill(email);
   await page.locator('#login-password').fill(password);
   await page.locator('#login-submit').click();
