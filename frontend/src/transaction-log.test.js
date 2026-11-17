@@ -80,4 +80,8 @@ describe('POS-75: Export CSV on the Transaction Log screen', () => {
       ''
     ]);
   });
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> 0a02c26e2655a3368b2b072d6e6c3c127f923f4b
