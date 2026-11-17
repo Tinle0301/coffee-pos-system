@@ -11,6 +11,10 @@ vi.mock('./backend/services/queue.js', () => ({
 vi.mock('./backend/services/orderStatus.js', () => ({
   UpdateOrderStatus: vi.fn(() => Promise.resolve({ data: {}, error: null }))
 }));
+vi.mock('./backend/services/orders.js', () => ({
+  RetrieveOrderByIdentifier: vi.fn(),
+  CancelExistingOrder: vi.fn()
+}));
 
 const flush = () => new Promise(process.nextTick);
 const orderNumbers = () =>

@@ -116,6 +116,50 @@ test.describe('Barista flow', () => {
     await expect(page.locator(`#todays-list li[data-order-id="${orderId}"]`)).toContainText('Paid · Credit/Debit');
   });
 
+  test('an unpaid order shows Pay and Cancel on the queue, and Pay takes payment', async ({ page }) => {
+    await logIn(page);
+    const orderId = await placeOrder(page);
+
+    // leave the Payment screen without paying
+    await page.locator('#header-active-orders-btn').click();
+    const row = page.locator('#queue-list li', { has: page.locator(`button[data-order-id="${orderId}"]`) });
+    await expect(row).toContainText('Not paid');
+    await expect(row.getByRole('button', { name: 'Start' })).toHaveCount(0);
+
+    // Pay opens the Payment screen for that order
+    await row.getByRole('button', { name: 'Pay' }).click();
+    await expect(page.locator('#payment-order-number')).toHaveText(orderId);
+    await page.getByRole('radio', { name: 'Card' }).check();
+    await page.locator('#complete-sale-btn').click();
+    await expect(page.locator('#payment-status')).toHaveText('Sale complete.');
+
+    // now it can be made: Start, then Complete
+    await page.locator('#header-active-orders-btn').click();
+    const button = page.locator(`#queue-list button[data-order-id="${orderId}"]`);
+    await expect(button).toHaveText('Start');
+    await button.click();
+    await expect(button).toHaveText('Complete');
+    await button.click();
+    await expect(page.locator(`#queue-list button[data-order-id="${orderId}"]`)).toHaveCount(0);
+  });
+
+  test('Cancel (two taps) removes an unpaid order from the queue', async ({ page }) => {
+    await logIn(page);
+    const orderId = await placeOrder(page);
+
+    await page.locator('#header-active-orders-btn').click();
+    const cancel = page.locator(`#queue-list button.queue-cancel-btn[data-order-id="${orderId}"]`);
+    await cancel.click();
+    await expect(cancel).toHaveText('Tap again to cancel');
+    await cancel.click();
+
+    await expect(page.locator('#queue-status')).toHaveText(`Order #${orderId.slice(0, 8)} cancelled.`);
+    await expect(page.locator(`#queue-list button[data-order-id="${orderId}"]`)).toHaveCount(0);
+
+    await page.locator('#header-todays-orders-btn').click();
+    await expect(page.locator(`#todays-list li[data-order-id="${orderId}"]`)).toContainText('Cancelled');
+  });
+
   test('log out returns to Login and stays logged out after a reload', async ({ page }) => {
     await logIn(page);
     await expect(page.locator('.app-header')).toBeVisible();

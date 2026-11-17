@@ -2,9 +2,14 @@
 //         bar sees new orders without refreshing.
 // POS-30: mark an order In Progress or Completed from the queue, so the bar
 //         knows what to make next.
+// Unpaid orders: "pay first, then make" — the database won't complete an
+//         unpaid order (NOT_PAID), so an unpaid order shows Pay (opens the
+//         Payment screen for it) and Cancel instead of Start / Complete.
+//         Without this, an order whose payment failed got stuck on the queue.
 
 import { listActiveQueueEntries, subscribeToQueue } from './backend/services/queue.js';
 import { UpdateOrderStatus } from './backend/services/orderStatus.js';
+import { RetrieveOrderByIdentifier, CancelExistingOrder } from './backend/services/orders.js';
 
 export const NEXT_STEP = {
   'Pending': { status: 'In Progress', label: 'Start' },
@@ -22,6 +27,8 @@ export function toQueueCard(entry) {
     orderStatusType: entry.orderStatusType ?? entry.queueEntryStatusType,
     orderCreationTimestamp: entry.orderCreationTimestamp ?? entry.queueEntryTimestamp,
     items: entry.items,
+    // true / false when known; null when this device can't see the payment
+    isPaid: entry.isPaid ?? null,
   };
 }
 
@@ -50,9 +57,28 @@ export const queueScreen = {
     `;
   },
 
-  async init(navigate) {
+  async init(navigate, currentOrder, staffId, appState) {
     const list = document.getElementById('queue-list');
     const status = document.getElementById('queue-status');
+    // Orders the database said aren't paid (NOT_PAID), when the list itself
+    // couldn't tell us.
+    const knownUnpaid = new Set();
+    let loadFailed = false;
+
+    function showError(message) {
+      status.className = 'error';
+      status.textContent = message;
+    }
+
+    function actionButton(label, orderId, onClick, extraClass = '') {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `add-btn ${extraClass}`.trim();
+      btn.dataset.orderId = orderId;
+      btn.textContent = label;
+      btn.addEventListener('click', () => onClick(orderId, btn));
+      return btn;
+    }
 
     document.getElementById('queue-new-order-btn').addEventListener('click', () => navigate('new-order'));
 
@@ -93,16 +119,27 @@ export const queueScreen = {
 
         li.appendChild(info);
 
-        // POS-30: one button per order for its next step (Start / Complete).
-        const next = NEXT_STEP[entry.orderStatusType];
-        if (next) {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'add-btn';
-          btn.dataset.orderId = entry.orderIdentifier;
-          btn.textContent = next.label;
-          btn.addEventListener('click', () => advance(entry.orderIdentifier, next.status, btn));
-          li.appendChild(btn);
+        const unpaid = entry.isPaid === false || knownUnpaid.has(entry.orderIdentifier);
+        if (unpaid) {
+          // Not paid yet: take payment, or cancel it (no refund needed).
+          const actions = document.createElement('div');
+          actions.className = 'queue-actions';
+          actions.style.cssText = 'display:flex;gap:8px;align-items:center';
+          const note = document.createElement('span');
+          note.className = 'order-line-detail queue-unpaid';
+          note.textContent = 'Not paid';
+          actions.append(
+            note,
+            actionButton('Pay', entry.orderIdentifier, pay, 'queue-pay-btn'),
+            actionButton('Cancel', entry.orderIdentifier, cancel, 'btn-ghost queue-cancel-btn')
+          );
+          li.appendChild(actions);
+        } else {
+          // POS-30: one button per order for its next step (Start / Complete).
+          const next = NEXT_STEP[entry.orderStatusType];
+          if (next) {
+            li.appendChild(actionButton(next.label, entry.orderIdentifier, (id, btn) => advance(id, next.status, btn)));
+          }
         }
 
         list.appendChild(li);
@@ -118,12 +155,17 @@ export const queueScreen = {
       }
       if (!document.body.contains(list)) return; // screen was left while loading
       if (result.error) {
-        status.className = 'error';
-        status.textContent = result.error.message;
+        showError(result.error.message);
+        loadFailed = true;
         return;
       }
-      status.className = '';
-      status.textContent = '';
+      // Only clear a message the list itself put up; a message from Start /
+      // Complete / Pay / Cancel stays until the next action.
+      if (loadFailed) {
+        status.className = '';
+        status.textContent = '';
+        loadFailed = false;
+      }
       renderEntries(result.data ?? []);
     }
 
@@ -133,6 +175,8 @@ export const queueScreen = {
       if (btn.disabled) return;
       btn.disabled = true;
       btn.textContent = 'Saving…';
+      status.className = '';
+      status.textContent = '';
 
       let result;
       try {
@@ -141,11 +185,62 @@ export const queueScreen = {
         result = { data: null, error: { message: 'Could not reach the server. Try again.' } };
       }
 
-      if (result.error) {
-        status.className = 'error';
-        status.textContent = result.error.message;
+      if (result.error?.code === 'NOT_PAID') {
+        knownUnpaid.add(orderId);
+        showError(`Order #${shortId(orderId)} hasn't been paid yet. Tap Pay to take payment, or Cancel.`);
+      } else if (result.error) {
+        showError(result.error.message);
       }
       await load(); // show the new status (other devices get it through the subscription)
+    }
+
+    // Open the Payment screen for an order that was never paid.
+    async function pay(orderId, btn) {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.textContent = 'Opening…';
+
+      let result;
+      try {
+        result = normalize(await RetrieveOrderByIdentifier(orderId), 'Loading the order');
+      } catch {
+        result = { data: null, error: { message: 'Could not reach the server. Try again.' } };
+      }
+      if (result.error || !result.data) {
+        showError(result.error?.message ?? 'Could not load this order.');
+        btn.disabled = false;
+        btn.textContent = 'Pay';
+        return;
+      }
+      if (appState) appState.lastOrder = result.data;
+      navigate('payment');
+    }
+
+    // Cancel an unpaid order. Two taps, so a stray touch can't cancel it.
+    async function cancel(orderId, btn) {
+      if (btn.disabled) return;
+      if (btn.dataset.armed !== 'true') {
+        btn.dataset.armed = 'true';
+        btn.textContent = 'Tap again to cancel';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Cancelling…';
+
+      let result;
+      try {
+        result = normalize(await CancelExistingOrder(orderId), 'Cancelling the order');
+      } catch {
+        result = { data: null, error: { message: 'Could not reach the server. Try again.' } };
+      }
+      if (result.error) {
+        showError(result.error.message);
+      } else {
+        knownUnpaid.delete(orderId);
+        status.className = '';
+        status.textContent = `Order #${shortId(orderId)} cancelled.`;
+      }
+      await load();
     }
 
     // POS-26: reload whenever any device creates or updates an order.
