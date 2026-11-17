@@ -213,7 +213,8 @@ export const salesReportScreen = {
 
       let { data, error } = await callService(exportReportAsCsv, 'CSV export', currentReport.reportIdentifier);
 
-      // Until exports.js is implemented, build the CSV from the report on screen.
+      // If the export service can't be reached, build the CSV from the report
+      // already on screen instead.
       if (error?.code === 'SERVICE_UNAVAILABLE') {
         data = {
           fileName: `sales-report-${currentReport.reportStartDate}_${currentReport.reportEndDate}.csv`,

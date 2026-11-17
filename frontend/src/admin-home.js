@@ -31,7 +31,7 @@ export const ADMIN_SECTIONS = [
   {
     heading: 'People and reports',
     tiles: [
-      { route: 'staff', title: 'Staff Accounts', description: 'See staff and deactivate accounts.' },
+      { route: 'staff', title: 'Staff Accounts', description: 'See staff, change roles, and deactivate or reactivate accounts.' },
       { route: 'reports', title: 'Reports Dashboard', description: 'Best sellers, busiest hours and payment breakdown at a glance.' },
       { route: 'sales-report', title: 'Sales Reports', description: 'Daily and weekly sales summaries.' },
     ],

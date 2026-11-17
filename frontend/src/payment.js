@@ -14,7 +14,8 @@
 
 import { processPayment } from './backend/services/payments.js';
 
-// TODO(backend): confirm the exact values payment_method_type accepts.
+// The values the database accepts are Cash, Credit/Debit and Mobile Pay
+// (checkout_order in 0010_checkout_keeps_order_open.sql).
 export const PAYMENT_METHODS = [
   { id: 'Cash', label: 'Cash' },
   // The button says Card; the database stores card payments as 'Credit/Debit'

@@ -7,7 +7,7 @@ All 14 use cases from the approved 491A documentation, with actor and the
 |---|----------|-------|-------------------|
 | 1 | Login/Logout | Barista | `auth.js` |
 | 2 | Create Order | Barista | `orders.js` (CreateNewOrder), `orderItems.js`, `queue.js` |
-| 3 | Modify Order | Barista | `orders.js` (ModifyExistingOrder), `orderItems.js` |
+| 3 | Modify Order | Barista | `orderItems.js` (AddOrderItem, UpdateOrderItemQuantity, RemoveOrderItem) — before submit the barista edits the order on New Order; changing a submitted order is future work |
 | 4 | Process Payment | Barista | `payments.js`, `orders.js`, `inventory.js` |
 | 5 | Update Order Status | Barista | `orderStatus.js`, `queue.js` |
 | 6 | View Menu | Barista | `menu.js` |
