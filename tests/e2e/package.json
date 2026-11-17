@@ -5,6 +5,7 @@
   "scripts": {
     "test": "playwright test",
     "test:barista": "playwright test barista-flow",
+    "test:admin": "playwright test admin-flow",
     "report": "playwright show-report"
   },
   "devDependencies": {
