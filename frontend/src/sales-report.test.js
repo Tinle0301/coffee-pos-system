@@ -4,7 +4,7 @@ import { generateSalesReport } from './backend/services/reports.js';
 import { exportReportAsCsv } from './backend/services/exports.js';
 
 // Mock the backend services (Node can't load the CDN-based supabase-client.js chain)
-vi.mock('./backend/services/reports.js', () => ({ generateSalesReport: vi.fn(), listSalesReports: vi.fn() }));
+vi.mock('./backend/services/reports.js', () => ({ generateSalesReport: vi.fn(), listSalesReports: vi.fn(() => Promise.resolve({data: [], error: null})) }));
 vi.mock('./backend/services/exports.js', () => ({ exportReportAsCsv: vi.fn() }));
 
 const $ = (selector) => document.querySelector(selector);
