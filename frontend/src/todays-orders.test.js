@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { todaysOrdersScreen } from './todays-orders.js';
 import * as ordersService from './backend/services/orders.js';
+import { ViewOrderItems } from './backend/services/orderItems.js';
 
 // Mock the backend service (Node can't load the CDN-based supabase-client.js chain)
 vi.mock('./backend/services/orders.js', () => ({ listOrders: vi.fn() }));
@@ -43,3 +44,35 @@ describe('POS-77: Today\'s orders with their status and payment', () => {
     expect($('#todays-status').textContent).toBe("Today's orders isn’t available yet.");
   });
 });
+
+describe('POS-86: Tap an order to see its items, customizations and payment', () => {
+  it('should show the order items and their customizations when an order is tapped', async () => {
+    orderService.listOrders.mockResolvedValue({ data: [{menuItemIdentifier: 'm1', menuItemName: 'Latte'}], error: null});
+    listMenuItems.mockResolvedValue({ data: [{menuItemIdentifier: 'm1', menuItemName: 'Latte'}], error:null});
+    ViewOrderItems.mockResolvedValue({
+      data: [ 
+      { orderdItemQuantity:2, associatedMenuItemIdentifier:'m1', itemCustomizationDescription: 'oat milk', itemPriceAmount: 3.95 },
+      { orderedItemQuantity:1, associatedMenuItemIdentifier:'m2', itemCustomizationDescription: 'null', itemPriceAmount: 0 }],
+      error: null
+    });
+    
+    await open();
+    expect($('.order-detaill')).toBeNull();
+
+    $('[data-order-id="1041"] .order-line-info').click();
+    await flush();
+
+    expect(ViewOrderItems).toHaveBeenCalledWith('1041');
+    const text = $('.order-detail').textContent;
+    expect(text).toContain('2 × Latte');
+    expect(text).toContain('oat milk');
+    expect(text).toContain('$7.90');                         // 2 x $3.95, worked out in cents
+    expect(text).toContain('No customizations');
+    expect(text).toContain('Payment: Paid · Credit/Debit · $7.90');
+
+    $('[data-order-id="1041"] .order-line-info').click();    // a second tap closes it
+    expect($('.order-detail')).toBeNull();
+  });
+});
+
+
