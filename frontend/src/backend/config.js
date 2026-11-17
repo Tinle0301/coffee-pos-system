@@ -17,7 +17,7 @@
 
 export const SUPABASE_URL = "https://inwlmodlxpcajgivmlbr.supabase.co";
 
-// TODO(Tin): paste the sb_publishable_... key from
-// Supabase → Settings → API Keys → "Publishable and secret API keys"
+// The publishable key, from Supabase → Settings → API Keys →
+// "Publishable and secret API keys". Safe in the browser (see above).
 export const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_woeyJbT3D_nnnH7yGwA3CA_lL96-T5l";
