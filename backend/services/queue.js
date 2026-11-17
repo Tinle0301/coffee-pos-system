@@ -17,10 +17,24 @@ import { supabase } from '../supabase-client.js';
  * @returns {Promise<{ data: import('../models/queueEntry.js').QueueEntry[] | null, error: ServiceError | null }>}
  */
 export async function listActiveQueueEntries() {
-  const { data, error } = await supabase
+  // Each entry also says whether its order has been paid, so the queue can
+  // offer Pay / Cancel for unpaid orders instead of Start / Complete
+  // ("pay first, then make" — update_order_status refuses to complete an
+  // unpaid order). RLS only shows the order and payment to their creator or
+  // an admin; for anyone else isPaid comes back null (unknown).
+  let { data, error } = await supabase
     .from('queue_entries')
-    .select('*')
+    .select('*, orders(payments(payment_completion_status))')
     .order('queue_entry_timestamp', { ascending: true });
+
+  if (error) {
+    // Never let the paid check take the whole queue down: fall back to the
+    // plain list, with isPaid unknown.
+    ({ data, error } = await supabase
+      .from('queue_entries')
+      .select('*')
+      .order('queue_entry_timestamp', { ascending: true }));
+  }
 
   if (error) {
     return { data: null, error: { code: 'LOOKUP_FAILED', message: 'Could not load the queue.' } };
@@ -65,5 +79,13 @@ function toQueueEntry(row) {
     associatedOrderIdentifier: row.associated_order_identifier,
     queueEntryStatusType: row.queue_entry_status_type,
     queueEntryTimestamp: row.queue_entry_timestamp,
+    isPaid: paidStatus(row.orders),
   };
+}
+
+// true / false when the order is visible, null when it isn't (RLS) or the
+// row came from Realtime, which sends the queue row alone.
+function paidStatus(order) {
+  if (!order || !Array.isArray(order.payments)) return null;
+  return order.payments.some((p) => p.payment_completion_status === 'Completed');
 }

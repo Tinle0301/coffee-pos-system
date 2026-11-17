@@ -351,7 +351,9 @@ question.
 - **Screen(s):** Active Orders Queue
 - **Backend module:** `backend/services/queue.js`
 - **Input:** none
-- **Returns:** `Array<{ queueEntryIdentifier, associatedOrderIdentifier, queueEntryStatusType, queueEntryTimestamp }>`, oldest first
+- **Returns:** `Array<{ queueEntryIdentifier, associatedOrderIdentifier, queueEntryStatusType, queueEntryTimestamp, isPaid }>`, oldest first
+  - `isPaid`: `true` / `false` whether the order has a Completed payment, or `null` when the caller can't see the order (RLS: only its creator or an admin can). The queue shows Pay / Cancel for `false`.
+  - If the paid lookup fails, the plain list is returned with `isPaid: null` rather than an error.
 - **Errors:** none beyond the generic `LOOKUP_FAILED`
 
 ### subscribeToQueue
