@@ -15,23 +15,15 @@
 // (the same-browser session clash from Sprint 3 can't happen here).
 
 import { test, expect } from '@playwright/test';
+import { credentials, logIn as logInAs } from './helpers.js';
 
-const EMAIL = process.env.POS_BARISTA_EMAIL;
-const PASSWORD = process.env.POS_BARISTA_PASSWORD;
+const { email: EMAIL, password: PASSWORD } = credentials('barista');
 
 test.skip(!EMAIL || !PASSWORD, 'Set POS_BARISTA_EMAIL and POS_BARISTA_PASSWORD to run the barista flow');
 
-/** Log in from the Login screen and wait for the register to load. */
-async function logIn(page, email = EMAIL, password = PASSWORD) {
-  const response = await page.goto('/');
-  expect(response?.ok(), `Could not open ${page.url()} (HTTP ${response?.status()}). Check POS_BASE_URL.`).toBeTruthy();
-  await expect(
-    page.locator('#login-email'),
-    `No Login screen at ${page.url()}. If it shows a Vercel login page, the preview is protected: test the live site instead (unset POS_BASE_URL).`
-  ).toBeVisible();
-  await page.locator('#login-email').fill(email);
-  await page.locator('#login-password').fill(password);
-  await page.locator('#login-submit').click();
+/** Log in as the test barista (or with another password, to test a wrong one). */
+function logIn(page, email = EMAIL, password = PASSWORD) {
+  return logInAs(page, { email, password });
 }
 
 /**
