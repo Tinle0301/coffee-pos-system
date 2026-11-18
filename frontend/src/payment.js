@@ -12,7 +12,12 @@
 // orders.js), not the total the New Order screen showed — the saved order
 // is what the customer actually owes.
 
+// POS-87: once the sale is complete a print "receipt" button is shown, and the barista can tap to print a receipt.
+
 import { processPayment } from './backend/services/payments.js';
+import { ViewOrderItems } from './backend/services/orderItems.js';
+import {listMenuItems} from './backend/services/menu.js';
+import { buildReceipt } from './receipt.js';
 
 // The values the database accepts are Cash, Credit/Debit and Mobile Pay
 // (checkout_order in 0010_checkout_keeps_order_open.sql).
@@ -51,6 +56,26 @@ export function normalizePaymentResult(result) {
   }
   return { data: result, error: null };
 }
+
+// POS-87
+function loadReceiptStyles() {
+  if (document.getElementById('receipt-styles')) return;
+  const link = document.createElement('linl');
+  link.id = 'receipt-styles';
+  link.rel = 'stylesheet';
+  link.href = './receipt.css';
+  document.head.appendChild(link);
+}
+
+async function lookup(fn,...args) {
+  try {
+    const result = await fn(...args);
+    return result ?? { data: null, error: { message:'unavailable' }};
+  } catch {
+    return {data:null, error: {message:'network'}};
+
+  }
+  }
 
 export const paymentScreen = {
   render(state) {
@@ -100,6 +125,12 @@ export const paymentScreen = {
 
         <p id="payment-status" role="status"></p>
         <button type="button" id="complete-sale-btn" disabled>Complete sale</button>
+
+        <div id="receipt-actions" hidden style="margin-top:12px">
+          <button type="button" id="print-receipt-btn" class="btn-ghost">Print receipt</button>
+          <p id="receipt-status" role="status"></p>
+        </div>
+        <div id="receipt" class="receipt" aria-hidden="true"></div>
       </div>
     `;
   },
@@ -131,6 +162,17 @@ export const paymentScreen = {
 
     let completed = false;
     let processing = false;
+
+    // POS-87
+
+    loadReceiptStyles();
+    const receiptActions = document.getElementById('receipt-actions');
+    const printBtn = document.getElementById('print-receipt-btn');
+    const receiptStatus = document.getElementById('receipt-status');
+    const receiptBox = document.getElementById('receipt');
+    let paid = null;
+    let printing = false;
+
 
     const selectedMethod = () => methodsBox.querySelector('input[name="payment-method"]:checked')?.value ?? null;
     const receivedCents = () => (cashInput.value === '' ? 0 : toCents(cashInput.value));
@@ -194,6 +236,15 @@ export const paymentScreen = {
         ? `Sale complete. Give ${formatCents(change)} change.`
         : 'Sale complete.';
 
+      // POS 87
+      paid = {
+        method,
+        paidAt: result.data?.paymentCompletionTimestamp ?? new Date().toISOString(),
+        cashReceived: method === 'Cash' ? receivedCents() /100 :null,
+        changeDue: method === 'Cash' ? change /100 : null,
+      };
+      receiptActions.hidden = false;
+
       // The sale is finished: clear the order so the next customer starts fresh.
       currentOrder.splice(0);
       appState.lastOrder = null;
@@ -202,6 +253,51 @@ export const paymentScreen = {
       cashInput.disabled = true;
       completeBtn.disabled = false;
       completeBtn.textContent = 'Start new order';
+    });
+
+  // POS-87
+    printBtn.addEventListener('click', async () => {
+      if (!paid || printing) return;
+      printing = true;
+      printBtn.disabled = true;
+      printBtn.textContent = 'Printing…';
+      receiptStatus.className = '';
+      receiptStatus.textContent = '';
+
+      const [itemResult, menuResult] = await Promise.all([
+        lookup(ViewOrderItems, orderId),
+        lookup(listMenuItems),
+      ]);
+      printing = false;
+      printBtn.disabled = false;
+      printBtn.textContent = 'Print receipt';
+
+      if (itemResult.error || menuResult.error || !itemResult.data || !menuResult.data) {
+        receiptStatus.className = 'error';
+        receiptStatus.textContent = 'Could not load the receipt. Try again.';
+        return;
+      }
+
+      const names = new Map(menuResult.data.map((m) => [m.menuItemIdentifier, m.menuItemName]));
+      receiptBox.innerHTML = '';
+      receiptBox.appendChild(buildReceipt({
+        orderId,
+        paidAt: paid.paidAt,
+        items: itemResult.data.map((item) => ({
+          quantity: item.orderedItemQuantity,
+          name: names.get(item.associatedMenuItemIdentifier) ?? 'Menu item',
+          customization: item.itemCustomizationDescription,
+          lineTotal: (toCents(item.itemPriceAmount) * item.orderedItemQuantity) / 100,
+        })),
+        subtotal: order.orderSubtotalAmount,
+        tax: order.orderTaxAmount,
+        total: order.orderTotalAmount,
+        paymentMethod: paid.method,
+        cashReceived: paid.cashReceived,
+        changeDue: paid.changeDue,
+      }));
+      window.addEventListener('afterprint', () => { receiptBox.innerHTML = ''; }, { once: true });
+      window.print();
     });
 
     refresh();

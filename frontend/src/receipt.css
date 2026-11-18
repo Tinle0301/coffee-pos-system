@@ -1,0 +1,32 @@
+/* receipt.css — the printed receipt only (POS-87).
+   Loaded by payment.js the first time the Payment screen opens. */
+
+/* On screen the receipt is never visible; it only exists so it can be printed. */
+@media screen {
+  .receipt { display: none; }
+}
+
+.receipt-paper {
+  width: 72mm;
+  font-family: ui-monospace, 'Courier New', monospace;
+  font-size: 12px;
+  color: #000;
+  background: #fff;
+}
+
+.receipt-title { margin: 0 0 4px; text-align: center; font-size: 16px; font-weight: 700; }
+.receipt-meta { margin: 0 0 2px; text-align: center; }
+.receipt-rule { border: 0; border-top: 1px dashed #000; margin: 8px 0; }
+.receipt-row { display: flex; justify-content: space-between; gap: 8px; margin: 2px 0; }
+.receipt-note { margin: 0 0 4px 14px; font-size: 11px; }
+.receipt-total { font-size: 14px; font-weight: 700; }
+.receipt-thanks { margin: 12px 0 0; text-align: center; }
+
+/* When printing, hide the whole app and show only the receipt. */
+@media print {
+  @page { margin: 4mm; }
+  body * { visibility: hidden; }
+  .receipt, .receipt * { visibility: visible; }
+  .receipt { position: absolute; top: 0; left: 0; }
+  body { padding: 0; background: #fff; }
+}
