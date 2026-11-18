@@ -3,7 +3,7 @@
 // "Low" matches the backend's POS-57 rule: quantity at or below the item's
 // minimum stock threshold. Read-only for now; admin-only via the route guard
 // in main.js (RLS is the real control).
-import { listInventory, restockInventory } from './inventory-api.js';
+import { listInventory, restockInventory, addInventoryItem } from './inventory-api.js';
 import { STOCK_LEVELS, stockLevel, sortBySeverity, countByLevel } from './stock-level.js';
 
 function escapeHtml(text) {
@@ -44,6 +44,36 @@ export function validateRestockAmount(raw) {
   return { value };
 }
 
+export const MAX_ITEM_NAME = 80;
+
+// Check the "Add item" form. `existing` is the list already on screen, used to
+// catch a duplicate name. Returns { errors } (per field) or { value }.
+export function validateNewItem(raw, existing = []) {
+  const errors = {};
+  const name = String(raw?.name ?? '').trim().replace(/\s+/g, ' ');
+  if (!name) errors.name = 'Enter the item name.';
+  else if (name.length > MAX_ITEM_NAME) errors.name = `Keep the name to ${MAX_ITEM_NAME} characters or fewer.`;
+  else if (existing.some((i) => String(i.inventoryItemName).trim().toLowerCase() === name.toLowerCase())) {
+    errors.name = 'An item with that name already exists. Use Restock to add stock to it.';
+  }
+
+  const number = (text, emptyMsg) => {
+    const t = String(text ?? '').trim();
+    if (!t) return { error: emptyMsg };
+    if (!/^\d+(\.\d{1,2})?$/.test(t)) return { error: 'Use a number like 10 or 2.5.' };
+    const value = Number(t);
+    if (value > MAX_RESTOCK) return { error: 'That is too large. Enter 9,999.99 or less.' };
+    return { value };
+  };
+  const qty = number(raw?.quantity, 'Enter the starting amount (0 if none yet).');
+  const min = number(raw?.minimum, 'Enter the reorder level (0 for none).');
+  if (qty.error) errors.quantity = qty.error;
+  if (min.error) errors.minimum = min.error;
+
+  if (Object.keys(errors).length) return { errors };
+  return { value: { inventoryItemName: name, availableQuantityValue: qty.value, minimumStockThreshold: min.value } };
+}
+
 export const inventoryScreen = {
   render() {
     return `
@@ -53,7 +83,10 @@ export const inventoryScreen = {
         </div>
         <div class="inventory-heading">
           <h2>Inventory</h2>
-          <button type="button" id="inventory-refresh-btn" class="btn-ghost">Refresh</button>
+          <div class="inventory-heading-actions">
+            <button type="button" id="inventory-add-btn" class="inventory-add-btn">+ Add item</button>
+            <button type="button" id="inventory-refresh-btn" class="btn-ghost">Refresh</button>
+          </div>
         </div>
         <p id="inventory-message" class="inventory-message" role="status" aria-live="polite"></p>
         <div id="inventory-summary" class="inventory-summary" aria-live="polite"></div>
@@ -77,6 +110,32 @@ export const inventoryScreen = {
             <div class="modal-actions">
               <button type="button" id="restock-cancel" class="btn-ghost">Cancel</button>
               <button type="submit" id="restock-save">Add stock</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="add-item-modal" class="modal-overlay" hidden>
+          <form id="add-item-form" class="screen-container modal-card" role="dialog" aria-modal="true" aria-labelledby="add-item-title" novalidate>
+            <h2 id="add-item-title">Add inventory item</h2>
+            <div class="inventory-form-field">
+              <label for="add-item-name">Item name</label>
+              <input id="add-item-name" type="text" autocomplete="off" maxlength="${MAX_ITEM_NAME}" placeholder="e.g. Oat Milk">
+              <p id="add-item-name-error" class="inventory-form-error" role="alert"></p>
+            </div>
+            <div class="inventory-form-field">
+              <label for="add-item-quantity">Starting amount on hand</label>
+              <input id="add-item-quantity" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 20">
+              <p id="add-item-quantity-error" class="inventory-form-error" role="alert"></p>
+            </div>
+            <div class="inventory-form-field">
+              <label for="add-item-minimum">Reorder level (flag as low at or below this)</label>
+              <input id="add-item-minimum" type="text" inputmode="decimal" autocomplete="off" placeholder="e.g. 5">
+              <p id="add-item-minimum-error" class="inventory-form-error" role="alert"></p>
+            </div>
+            <p id="add-item-error" class="inventory-form-error" role="alert"></p>
+            <div class="modal-actions">
+              <button type="button" id="add-item-cancel" class="btn-ghost">Cancel</button>
+              <button type="submit" id="add-item-save">Add item</button>
             </div>
           </form>
         </div>
@@ -225,6 +284,87 @@ export const inventoryScreen = {
       items = items.map((i) => (i.inventoryItemIdentifier === item.inventoryItemIdentifier ? updated : i));
       closeRestock();
       say(`Added ${formatQty(value)} to ${updated.inventoryItemName}. Now ${formatQty(updated.availableQuantityValue)} on hand.`);
+      draw();
+    });
+
+    // ---------- Add item (POS-85) ----------
+    const addBtn = document.getElementById('inventory-add-btn');
+    const addModal = document.getElementById('add-item-modal');
+    const addForm = document.getElementById('add-item-form');
+    const addFields = {
+      name: document.getElementById('add-item-name'),
+      quantity: document.getElementById('add-item-quantity'),
+      minimum: document.getElementById('add-item-minimum'),
+    };
+    const addErrors = {
+      name: document.getElementById('add-item-name-error'),
+      quantity: document.getElementById('add-item-quantity-error'),
+      minimum: document.getElementById('add-item-minimum-error'),
+    };
+    const addFormError = document.getElementById('add-item-error');
+    const addSaveBtn = document.getElementById('add-item-save');
+    const addCancelBtn = document.getElementById('add-item-cancel');
+    let adding = false;
+    let addReturnFocus = null;
+
+    function openAdd() {
+      addReturnFocus = document.activeElement;
+      addForm.reset();
+      Object.values(addErrors).forEach((el) => { el.textContent = ''; });
+      addFormError.textContent = '';
+      adding = false;
+      addSaveBtn.disabled = false;
+      addCancelBtn.disabled = false;
+      addModal.hidden = false;
+      addFields.name.focus();
+    }
+
+    function closeAdd() {
+      if (adding) return;
+      addModal.hidden = true;
+      if (addReturnFocus && typeof addReturnFocus.focus === 'function') addReturnFocus.focus();
+    }
+
+    addBtn.addEventListener('click', openAdd);
+    addCancelBtn.addEventListener('click', closeAdd);
+    addModal.addEventListener('click', (event) => { if (event.target === addModal) closeAdd(); });
+    addModal.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeAdd(); });
+
+    addForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (adding) return; // double-tap protection
+      Object.values(addErrors).forEach((el) => { el.textContent = ''; });
+      addFormError.textContent = '';
+
+      const result = validateNewItem(
+        { name: addFields.name.value, quantity: addFields.quantity.value, minimum: addFields.minimum.value },
+        items,
+      );
+      if (result.errors) {
+        for (const key of ['name', 'quantity', 'minimum']) addErrors[key].textContent = result.errors[key] || '';
+        const first = ['name', 'quantity', 'minimum'].find((key) => result.errors[key]);
+        addFields[first].focus();
+        return;
+      }
+
+      adding = true;
+      addSaveBtn.disabled = true;
+      addCancelBtn.disabled = true;
+      const { data: created, error } = await addInventoryItem(result.value);
+      adding = false;
+      addSaveBtn.disabled = false;
+      addCancelBtn.disabled = false;
+
+      if (error || !created) {
+        // Keep the box open with what they typed. No automatic retry, so a
+        // slow failure can't add the same item twice.
+        addFormError.textContent = error?.message || 'Could not add the item. Please try again.';
+        return;
+      }
+
+      items = [...items, created];
+      closeAdd();
+      say(`Added ${created.inventoryItemName} with ${formatQty(created.availableQuantityValue)} on hand.`);
       draw();
     });
 
