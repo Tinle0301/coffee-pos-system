@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { paymentScreen } from './payment.js';
 import { processPayment } from './backend/services/payments.js';
+import { L } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
 // Mock the backend service (Node can't load the CDN-based supabase-client.js chain)
 vi.mock('./backend/services/payments.js', () => ({
@@ -55,4 +56,38 @@ describe('Payment: select a method, confirm the amount, complete the sale', () =
     expect($('#payment-status').textContent).toBe('Sale complete.');
     expect(state.currentOrder).toHaveLength(0);
   });
-});
+
+    // POS 87
+  it('should show the Print receipt button only after the sale is complete', async () => {
+      mount ();
+      expect ($('#receipt-actions').hidden).toBe(true);
+
+      chooseMethod('Card');
+      $('#complete-sale-btn').click();
+      await new Promise(process.nextTick);
+
+      expect($('receipt-actions').hidden).toBe(false)
+    });
+
+    it('should print a receipt with the items, toal and payment details', async () => {
+
+      mount();
+      chooseMethod('Cash');
+      $('#cash-received').value = '20';
+      $('#cash-received').dispatchEvent(new Event('input'));
+      $('#complete-sale-btn').click();
+      await new Promise(process.nextTick);
+
+      let receiptText = '';
+      window.print = vi.fn(() => { receiptText = $('#receipt').textCOntent;  })
+      $('#print-receipt-btn').click();
+      await new Promise(process.nextTick);
+
+      expect(window.print).toHaveBeenCalledTimes(1);
+      expect(receiptText).toContain('2 x Latte');
+      expect(receiptText).toContain('Oat milk');
+    expect(receiptText).toContain('$11.14');
+    expect(receiptText).toContain('Cash received$20.00');
+    expect(receiptText).toContain('Change$8.86');
+  });
+});;
