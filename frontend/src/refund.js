@@ -258,7 +258,8 @@ export const refundScreen = {
       pending = null;
       $('refund-payment-id').value = '';
       loadRecent(); // that payment is now refunded, so it drops off the list
-      result.textContent = `Refunded ${formatPrice(amount)} (${type.toLowerCase()}). Refund ID: ${data.refundTransactionIdentifier}`;
+      const refundId = data.refundTransactionIdentifier;
+      result.textContent = `Refunded ${formatPrice(amount)} (${type.toLowerCase()}).${refundId ? ` Refund ID: ${refundId}` : ''}`;
     });
 
     loadRecent();
