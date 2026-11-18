@@ -1,4 +1,4 @@
-import { itemLineTotal } from "./todays-orders";
+import { itemLineTotal } from "./todays-orders.js";
 
 export const SHOP_NAME = 'coffee POS';
 const money = (amount) => `$${Number(amount).toFixed(2)}`

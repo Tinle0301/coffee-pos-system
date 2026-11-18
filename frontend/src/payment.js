@@ -15,7 +15,7 @@
 // POS-87: once the sale is complete a print "receipt" button is shown, and the barista can tap to print a receipt.
 
 import { processPayment } from './backend/services/payments.js';
-import { viewOrderItems } from './backend/services/orderItems.js';
+import { ViewOrderItems } from './backend/services/orderItems.js';
 import {listMenuItems} from './backend/services/menu.js';
 import { buildReceipt } from './receipt.js';
 

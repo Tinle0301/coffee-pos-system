@@ -10,9 +10,8 @@
 
 import * as ordersService from './backend/services/orders.js';
 import { callService, formatMoney } from './admin-common.js';
-import { viewOrderItems } from './backend/services/orderItems.js';
+import { ViewOrderItems } from './backend/services/orderItems.js';
 import { listMenuItems } from './backend/services/menu.js';
-import { callService, formatMoney } from './admin-common.js';
 
 /** Local midnight today (inclusive) to local midnight tomorrow (exclusive), as ISO timestamps. */
 export function todayRange(now = new Date()) {

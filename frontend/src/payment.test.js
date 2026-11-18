@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { paymentScreen } from './payment.js';
 import { processPayment } from './backend/services/payments.js';
-import { L } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
 // Mock the backend service (Node can't load the CDN-based supabase-client.js chain)
 vi.mock('./backend/services/payments.js', () => ({
