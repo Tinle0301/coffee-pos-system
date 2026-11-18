@@ -28,12 +28,6 @@ export async function UpdateOrderStatus(orderId, newStatus) {
   };
 }
 
-/**
- * @param {string} orderId
- * @returns {Promise<void>}
- */
-export async function MarkOrderAsInProgress(orderId) {}
-
 function mapUpdateOrderStatusError(rpcError) {
   const raised = rpcError.message || '';
   const separatorIndex = raised.indexOf(':');

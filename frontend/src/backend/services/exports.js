@@ -1,10 +1,7 @@
-// exports.js — CSV/PDF export of reports (admin only)
+// exports.js — CSV export of saved sales reports (admin only)
 //
-// Unlike the rest of backend/services/, these don't return { data, error }
-// — they return the thing to download directly (a Blob), matching the
-// original stub signature. There's no form field to show an error next
-// to; a caller wires this straight into a download click and can
-// try/catch it. Only CSV is implemented here (POS-47); PDF stays a stub.
+// Returns { data, error } and never throws, like every other service.
+// data is { fileName, csvText }; the screen turns csvText into a download.
 //
 // sales_reports is admin-only under RLS (sales_reports_admin_only in
 // 0002_rls_policies.sql), so a non-admin caller's select just returns no
@@ -15,9 +12,12 @@ import { supabase } from '../supabase-client.js';
 
 const CSV_HEADER = ['Report Type', 'Start Date', 'End Date', 'Total Revenue', 'Generated At'];
 
+/** @typedef {{ code: string, message: string }} ServiceError */
+
 /**
- * @param {string} reportId
- * @returns {Promise<Blob>} a text/csv Blob, one header row plus one data row
+ * @param {string} reportId a sales_reports.report_identifier
+ * @returns {Promise<{ data: { fileName: string, csvText: string } | null, error: ServiceError | null }>}
+ *   csvText is one header row plus one data row
  */
 export async function exportReportAsCsv(reportId) {
   const { data, error } = await supabase
@@ -27,10 +27,10 @@ export async function exportReportAsCsv(reportId) {
     .maybeSingle();
 
   if (error) {
-    throw new Error('Could not load the sales report.');
+    return { data: null, error: { code: 'LOOKUP_FAILED', message: 'Could not load the sales report.' } };
   }
   if (!data) {
-    throw new Error('Sales report not found.');
+    return { data: null, error: { code: 'REPORT_NOT_FOUND', message: 'Sales report not found.' } };
   }
 
   const row = [
@@ -41,16 +41,14 @@ export async function exportReportAsCsv(reportId) {
     data.report_generated_timestamp,
   ];
 
-  const csv = [CSV_HEADER, row].map(toCsvLine).join('\r\n') + '\r\n';
-
-  return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  return {
+    data: {
+      fileName: `sales-report-${data.report_start_date}_${data.report_end_date}.csv`,
+      csvText: [CSV_HEADER, row].map(toCsvLine).join('\r\n') + '\r\n',
+    },
+    error: null,
+  };
 }
-
-/**
- * @param {string} reportId
- * @returns {Promise<Blob>}
- */
-export async function exportReportAsPdf(reportId) {}
 
 function toCsvLine(fields) {
   return fields.map(csvEscape).join(',');

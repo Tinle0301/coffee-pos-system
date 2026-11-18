@@ -69,23 +69,6 @@ export async function CreateNewOrder(items, staffId) {
 }
 
 /**
- * NOTE: intentionally not implemented yet. Order-level fields worth
- * changing after creation don't have settled semantics: item changes go
- * through orderItems.js (AddOrderItem / UpdateOrderItemQuantity /
- * RemoveOrderItem), and status changes go through orderStatus.js's
- * update_order_status. What "changes" is legal to pass here — and whether
- * it needs to recompute subtotal/tax/total — needs a decision before this
- * is filled in.
- *
- * @param {string} orderId
- * @param {object} changes
- * @returns {Promise<{ data: import('../models/order.js').Order | null, error: ServiceError | null }>}
- */
-export async function ModifyExistingOrder(orderId, changes) {
-  throw new Error('ModifyExistingOrder: not implemented — see comment above');
-}
-
-/**
  * @param {string} orderId
  * @returns {Promise<{ data: null, error: ServiceError | null }>}
  */

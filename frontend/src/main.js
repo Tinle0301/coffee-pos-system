@@ -6,6 +6,7 @@ import { logoutComponent } from './logout.js';
 import { renderLoginScreen } from './login.js';
 import { session } from './backend/auth.js';
 import { startAuthSync } from './auth-sync.js';
+import { startSessionTimeout } from './backend/sessionTimeout.js';
 
 import { paymentScreen } from './payment.js';
 import { queueScreen } from './queue.js';
@@ -107,6 +108,10 @@ function onLoginSuccess(user) {
   const isAdmin = user.staffRoleType === 'Admin';
   renderAuthenticatedShell(user.staffFullName, isAdmin);
   navigate(isAdmin ? 'admin' : 'new-order'); // admins land on their home screen
+
+  // SRS: sign out after 10 minutes with no taps or typing, so an unattended
+  // register can't be used by someone else. Reloading shows the Login screen.
+  startSessionTimeout(() => window.location.replace(window.location.pathname));
 }
 
 function showLogin() {

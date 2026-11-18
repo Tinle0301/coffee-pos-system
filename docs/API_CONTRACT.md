@@ -351,7 +351,9 @@ question.
 - **Screen(s):** Active Orders Queue
 - **Backend module:** `backend/services/queue.js`
 - **Input:** none
-- **Returns:** `Array<{ queueEntryIdentifier, associatedOrderIdentifier, queueEntryStatusType, queueEntryTimestamp }>`, oldest first
+- **Returns:** `Array<{ queueEntryIdentifier, associatedOrderIdentifier, queueEntryStatusType, queueEntryTimestamp, isPaid }>`, oldest first
+  - `isPaid`: `true` / `false` whether the order has a Completed payment, or `null` when the caller can't see the order (RLS: only its creator or an admin can). The queue shows Pay / Cancel for `false`.
+  - If the paid lookup fails, the plain list is returned with `isPaid: null` rather than an error.
 - **Errors:** none beyond the generic `LOOKUP_FAILED`
 
 ### subscribeToQueue
@@ -392,17 +394,15 @@ question.
 - **Backend module:** `backend/services/exports.js`
 - **Input:**
   - reportId: `string` (uuid) — a `sales_reports.report_identifier`
-- **Returns:** `Blob` (`text/csv`) — **not** the `{ data, error }` shape. One
+- **Returns:** `{ data: { fileName, csvText }, error }` — `csvText` is one
   header row plus one data row (Report Type, Start Date, End Date, Total
-  Revenue, Generated At), matching the original stub's `Promise<Blob>`
-  signature. There's no form field to show an error next to on a file
-  download, so this throws on failure instead of returning `error`.
-- **Errors (thrown, not returned):**
-  - report doesn't exist, or caller is not admin -> `Error('Sales report not found.')`
+  Revenue, Generated At); `fileName` is `sales-report-<start>_<end>.csv`.
+- **Errors:**
+  - report doesn't exist, or caller is not admin -> `REPORT_NOT_FOUND`
     (RLS filters a non-admin's query down to no row, same as a genuinely
     missing id — same reasoning as `login`'s identical message for both
     failure cases)
-  - database lookup failure -> `Error('Could not load the sales report.')`
+  - database lookup failure -> `LOOKUP_FAILED`
 
 ### generateSalesReport
 - **Screen(s):** Admin Sales Report
@@ -526,27 +526,14 @@ question.
 
 ---
 
-## Implementation status (Sprint 3, in progress)
+## Implementation status (final, Sprint 5)
 
-Implemented: `auth.js` (POS-5), `sessionTimeout.js` (POS-6), `menu.js`
-(POS-45 adds `hideMenuItem`), `orders.js` (except `ModifyExistingOrder`),
-`orderItems.js` (POS-9), `payments.js` and `queue.js` (POS-19),
-`transactions.js` (POS-33), `reports.js` (POS-46), `exportReportAsCsv` in
-`exports.js` (POS-47), `staff.js` (POS-43), `inventory.js` (POS-44),
-`refunds.js` (POS-68), and the `create_order` (POS-8),
-`checkout_order` (POS-18/POS-39), and `process_refund` (POS-31) database
-functions. Everything listed below is an empty stub.
-
-## Remaining operations (signatures TBD as they're implemented)
-
-Fill in an entry per operation as each screen is built, following the
-format above. Placeholder list from `backend/services/`:
-
-- ModifyExistingOrder (`orders.js`) — not implemented yet; see the comment
-  in `orders.js` for why (item-level and status changes already have
-  homes elsewhere, order-level "changes" doesn't have settled semantics)
-- MarkOrderAsInProgress (`orderStatus.js`)
-- exportReportAsPdf (`exports.js`)
+Every operation in `backend/services/` is implemented and returns
+`{ data, error }` (except the Realtime/auth callbacks `subscribeToQueue`
+and `onAuthChange`, which return an unsubscribe function). The unused
+placeholders `ModifyExistingOrder`, `MarkOrderAsInProgress` and
+`exportReportAsPdf` were removed: item changes go through `orderItems.js`,
+status changes through `UpdateOrderStatus`, and reports export as CSV.
 
 ---
 

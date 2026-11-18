@@ -1,5 +1,6 @@
-// reports-service.test.js — POS-66
-// Tests generateSalesReport's order-count and payment-method breakdown.
+// reports-service.test.js -- POS-66, POS-83
+// Tests generateSalesReport's order-count and payment-method breakdown,
+// and getSalesActivity (POS-64's best sellers / busiest hours).
 
 import {
   describe,
@@ -26,13 +27,18 @@ const from = vi.fn((table) =>
   table === 'payments' ? paymentsQuery : salesReportsQuery
 );
 
+const rpc = vi.fn();
+
 // Node cannot load the CDN-based Supabase client during unit tests,
 // so replace it with controllable mocks.
 vi.mock('./backend/supabase-client.js', () => ({
-  supabase: { from: (...args) => from(...args) },
+  supabase: {
+    from: (...args) => from(...args),
+    rpc: (...args) => rpc(...args),
+  },
 }));
 
-const { generateSalesReport } = await import(
+const { generateSalesReport, getSalesActivity } = await import(
   './backend/services/reports.js'
 );
 
@@ -133,5 +139,125 @@ describe('generateSalesReport — order count and payment method totals', () => 
       'Credit/Debit': 0,
       'Mobile Pay': 0,
     });
+  });
+});
+
+// -------------------------------------------------------------------------
+// getSalesActivity — POS-83
+// -------------------------------------------------------------------------
+
+describe('getSalesActivity — input validation (no round trip to the database)', () => {
+  it('rejects a malformed date', async () => {
+    const { data, error } = await getSalesActivity('10-01-2026', '2026-10-07');
+
+    expect(data).toBeNull();
+    expect(error.code).toBe('INVALID_DATE_RANGE');
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects a calendar date that does not exist', async () => {
+    // isCalendarDate round-trips through Date and rejects Feb 30.
+    const { data, error } = await getSalesActivity('2026-02-30', '2026-03-01');
+
+    expect(data).toBeNull();
+    expect(error.code).toBe('INVALID_DATE_RANGE');
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects startDate after endDate', async () => {
+    const { data, error } = await getSalesActivity('2026-10-07', '2026-10-01');
+
+    expect(data).toBeNull();
+    expect(error.code).toBe('INVALID_DATE_RANGE');
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe('getSalesActivity — success', () => {
+  it('calls both report functions with the date range and maps rows to camelCase numbers', async () => {
+    rpc.mockImplementation((fn) => {
+      if (fn === 'best_selling_items_report') {
+        return Promise.resolve({
+          data: [
+            { menu_item_identifier: 'item-1', menu_item_name: 'Latte', quantity_sold: '12', gross_item_revenue: '54.00' },
+          ],
+          error: null,
+        });
+      }
+      if (fn === 'busiest_hours_report') {
+        return Promise.resolve({
+          data: [{ hour_of_day: '9', order_count: '4' }],
+          error: null,
+        });
+      }
+      throw new Error(`unexpected rpc: ${fn}`);
+    });
+
+    const { data, error } = await getSalesActivity('2026-10-01', '2026-10-07');
+
+    expect(rpc).toHaveBeenCalledWith('best_selling_items_report', { range_start: '2026-10-01', range_end: '2026-10-07' });
+    expect(rpc).toHaveBeenCalledWith('busiest_hours_report', { range_start: '2026-10-01', range_end: '2026-10-07' });
+
+    expect(error).toBeNull();
+    expect(data).toEqual({
+      bestSellers: [{ menuItemIdentifier: 'item-1', menuItemName: 'Latte', quantitySold: 12, grossItemRevenue: 54 }],
+      busiestHours: [{ hourOfDay: 9, orderCount: 4 }],
+    });
+  });
+
+  it('returns empty arrays, not null, when both functions come back with no rows', async () => {
+    rpc.mockResolvedValue({ data: null, error: null });
+
+    const { data, error } = await getSalesActivity('2026-10-01', '2026-10-07');
+
+    expect(error).toBeNull();
+    expect(data).toEqual({ bestSellers: [], busiestHours: [] });
+  });
+});
+
+describe('getSalesActivity — error handling', () => {
+  it('maps an UNAUTHORIZED message from either function to the UNAUTHORIZED code', async () => {
+    rpc.mockImplementation((fn) => Promise.resolve({
+      data: null,
+      error: fn === 'best_selling_items_report' ? { message: 'UNAUTHORIZED: caller is not an active admin' } : null,
+    }));
+
+    const { data, error } = await getSalesActivity('2026-10-01', '2026-10-07');
+
+    expect(data).toBeNull();
+    expect(error).toEqual({ code: 'UNAUTHORIZED', message: 'Only active admins can view sales activity.' });
+  });
+
+  it('maps a bare Postgres permission-denied code (42501) to UNAUTHORIZED', async () => {
+    rpc.mockImplementation((fn) => Promise.resolve({
+      data: null,
+      error: fn === 'busiest_hours_report' ? { code: '42501', message: 'permission denied' } : null,
+    }));
+
+    const { data, error } = await getSalesActivity('2026-10-01', '2026-10-07');
+
+    expect(data).toBeNull();
+    expect(error).toEqual({ code: 'UNAUTHORIZED', message: 'Only active admins can view sales activity.' });
+  });
+
+  it('hides an unrelated database error behind LOOKUP_FAILED', async () => {
+    rpc.mockImplementation((fn) => Promise.resolve({
+      data: null,
+      error: fn === 'best_selling_items_report' ? { message: 'relation does not exist' } : null,
+    }));
+
+    const { data, error } = await getSalesActivity('2026-10-01', '2026-10-07');
+
+    expect(data).toBeNull();
+    expect(error).toEqual({ code: 'LOOKUP_FAILED', message: 'Could not load sales activity for this date range.' });
+  });
+
+  it('returns LOOKUP_FAILED when the RPC calls themselves throw (network/client failure)', async () => {
+    rpc.mockImplementation(() => { throw new Error('network down'); });
+
+    const { data, error } = await getSalesActivity('2026-10-01', '2026-10-07');
+
+    expect(data).toBeNull();
+    expect(error).toEqual({ code: 'LOOKUP_FAILED', message: 'Could not load sales activity for this date range.' });
   });
 });

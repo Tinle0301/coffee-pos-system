@@ -19,10 +19,13 @@ import { ViewOrderItems } from './backend/services/orderItems.js';
 import {listMenuItems} from './backend/services/menu.js';
 import { buildReceipt } from './receipt.js';
 
-// TODO(backend): confirm the exact values payment_method_type accepts.
+// The values the database accepts are Cash, Credit/Debit and Mobile Pay
+// (checkout_order in 0010_checkout_keeps_order_open.sql).
 export const PAYMENT_METHODS = [
   { id: 'Cash', label: 'Cash' },
-  { id: 'Card', label: 'Card' },
+  // The button says Card; the database stores card payments as 'Credit/Debit'
+  // (checkout_order only accepts Cash, Credit/Debit, Mobile Pay).
+  { id: 'Credit/Debit', label: 'Card' },
 ];
 
 // Money is handled in whole cents so change due is never a cent off.

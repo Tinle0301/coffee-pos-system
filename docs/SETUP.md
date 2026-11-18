@@ -78,16 +78,32 @@ The SQL lives in two places with the same content:
 When you add a migration, add it to **both** folders (same SQL, the
 timestamp version named after the date).
 
-Current migrations: `0001_schema`, `0002_rls_policies`, `0003_functions`,
-`0004_create_order` (replaces the `create_order` stub from `0003`),
-`0005_payment_security` (locks down payments and transaction logs),
-`0006_status_role_checks` (role checks on every order status change),
-`0007_checkout_order` (replaces the `checkout_order` stub from `0003`),
-`0008_queue_realtime` (adds `queue_entries` to the `supabase_realtime`
-publication so the queue screen gets live updates), `0009_process_refund`,
-`0010_checkout_keeps_order_open` (pay first, then make) and
-`0014_cancel_order` (replaces the `cancel_order` stub from `0003`).
-`0011`–`0013` are reserved for POS-21, POS-20 and POS-22.
+Current migrations (22):
+
+| # | Migration | What it does |
+|---|---|---|
+| 0001 | `schema` | The tables |
+| 0002 | `rls_policies` | Row Level Security on every table |
+| 0003 | `functions` | Helper functions and the first function stubs |
+| 0004 | `create_order` | Create an order with its items (POS-8) |
+| 0005 | `payment_security` | Payments and transaction logs can't be changed or deleted (POS-16) |
+| 0006 | `status_role_checks` | Role checks on every order status change (POS-17) |
+| 0007 | `checkout_order` | Take payment for an order (POS-18) |
+| 0008 | `queue_realtime` | Live updates for the order queue (POS-19) |
+| 0009 | `process_refund` | Full and partial refunds (POS-31) |
+| 0010 | `checkout_keeps_order_open` | Pay first, then make (POS-39) |
+| 0011 | `update_order_status` | Legal status changes, queue and log kept in sync (POS-21) |
+| 0012 | `menu_item_ingredients` | Recipes; stock is deducted at checkout (POS-20) |
+| 0013 | `queue_indexes` | Indexes for the queue and transaction log (POS-22) |
+| 0014 | `cancel_order` | Cancel an unpaid order (POS-37) |
+| 0015 | `low_stock_inventory` | List low-stock items (POS-57) |
+| 0016 | `restock_inventory` | Audited restock (POS-58) |
+| 0017 | `staff_management` | Change roles, deactivate/reactivate, no self-changes (POS-43) |
+| 0018 | `stock_change_logging` | Every stock change is logged (POS-63) |
+| 0019 | `sales_report_payment_breakdown` | Order count and totals by payment method (POS-66) |
+| 0020 | `ingredient_usage_report` | Ingredient usage for a date range (POS-78) |
+| 0021 | `sales_activity_report` | Best sellers and busiest hours (POS-64) |
+| 0022 | `security_hardening` | Signed-out callers locked out of every table and function (POS-61) |
 
 To apply them to the live project:
 
@@ -98,7 +114,10 @@ supabase link --project-ref inwlmodlxpcajgivmlbr   # once, asks for the DB passw
 supabase db push
 ```
 
-`db push` only runs the files the project hasn't seen yet. You can also
+`db push` only runs the files the project hasn't seen yet. Check with
+`supabase migration list`: every row should have both a Local and a Remote
+time. If a migration has an older timestamp than one already applied, a
+plain `db push` skips it; use `supabase db push --include-all`. You can also
 paste a single migration into the dashboard's **SQL Editor**, but then
 `db push` will try to run it again later, so prefer `db push`.
 
@@ -174,3 +193,52 @@ What happens on each push:
 
 Database changes are not part of a Vercel deploy. Merge the PR, then run
 `supabase db push` (section 3).
+
+## 8. Tests
+
+**Frontend and services** (Vitest), from `frontend/src`:
+
+```bash
+npm install
+npx vitest run
+node ../../scripts/check-frontend.mjs   # conflict markers, syntax, imports
+```
+
+**Database rules** (SQL checks), against an **empty** local Postgres
+database, never the live project:
+
+```bash
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres" bash scripts/run-sql-checks.sh
+```
+
+It applies every migration plus the seed data, then runs every file in
+`backend/tests/`. CI runs both of these on every pull request.
+
+**End-to-end** (Playwright, a real browser), from `tests/e2e`:
+
+```bash
+npm ci
+npx playwright install chromium
+export POS_BARISTA_EMAIL="barista@test.com"
+read -s "POS_BARISTA_PASSWORD?Test barista password: " && export POS_BARISTA_PASSWORD && echo
+export POS_ADMIN_EMAIL="<test admin email>"
+read -s "POS_ADMIN_PASSWORD?Test admin password: " && export POS_ADMIN_PASSWORD && echo
+npx playwright test
+```
+
+- Use the **test** accounts only; logins are never written in the repo.
+- `POS_BASE_URL` picks the site: unset = the live site, or a Vercel
+  preview URL to test a PR before merging.
+- The barista test creates and completes 2 real orders per run; the admin
+  test saves one Day report.
+- `npx playwright show-report` shows a screenshot of any failing step.
+
+## 9. Demo data
+
+`scripts/demo-data-live.sql` loads 14 realistic orders (payments, refunds,
+queue, logs) into the live project for a review or presentation: paste it
+into the SQL Editor and run it. Running it again the same day adds
+nothing; on a later day it adds a fresh set. Demo payments can't be
+deleted later (audit rules), so never run it on a database with real
+sales.
+

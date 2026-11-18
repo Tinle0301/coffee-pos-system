@@ -27,6 +27,8 @@ const FILES = [
   ['supabase-client.js', 'supabase-client.js'],
   // auth.js sits one folder higher in the copy, so its import path changes
   ['services/auth.js', 'auth.js', [["from '../supabase-client.js'", "from './supabase-client.js'"]]],
+  // sessionTimeout.js imports './auth.js', so it sits next to auth.js in the copy
+  ['services/sessionTimeout.js', 'sessionTimeout.js'],
   ['services/staff.js', 'services/staff.js'],
   ['services/inventory.js', 'services/inventory.js'],
   ['services/menu.js', 'services/menu.js'],

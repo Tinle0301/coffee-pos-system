@@ -30,7 +30,7 @@ describe('Payment: select a method, confirm the amount, complete the sale', () =
     mount();
     expect($('#complete-sale-btn').disabled).toBe(true);
 
-    chooseMethod('Card');
+    chooseMethod('Credit/Debit');
     expect($('#complete-sale-btn').disabled).toBe(false);
   });
 
@@ -47,15 +47,16 @@ describe('Payment: select a method, confirm the amount, complete the sale', () =
 
   it('should complete the sale for the order total and clear the order', async () => {
     const state = mount();
-    chooseMethod('Card');
+    chooseMethod('Credit/Debit');
     $('#complete-sale-btn').click();
     await new Promise(process.nextTick);
 
-    expect(processPayment).toHaveBeenCalledWith('ord-1042', 'Card', 11.14);
+    expect(processPayment).toHaveBeenCalledWith('ord-1042', 'Credit/Debit', 11.14);
     expect($('#payment-status').textContent).toBe('Sale complete.');
     expect(state.currentOrder).toHaveLength(0);
   });
 
+<<<<<<< HEAD
     // POS 87
   it('should show the Print receipt button only after the sale is complete', async () => {
       mount ();
@@ -90,3 +91,14 @@ describe('Payment: select a method, confirm the amount, complete the sale', () =
     expect(receiptText).toContain('Change$8.86');
   });
 });;
+=======
+  it('should only send payment methods the database accepts, with Card shown for Credit/Debit', () => {
+    mount();
+    const methods = [...document.querySelectorAll('input[name="payment-method"]')];
+    // checkout_order (0010_checkout_keeps_order_open.sql) rejects anything else
+    for (const radio of methods) expect(['Cash', 'Credit/Debit', 'Mobile Pay']).toContain(radio.value);
+    const cardLabel = $('input[name="payment-method"][value="Credit/Debit"]').closest('label');
+    expect(cardLabel.textContent.trim()).toBe('Card');
+  });
+});
+>>>>>>> 209586d354042cd0bf995e6db6a457fe48b65156
