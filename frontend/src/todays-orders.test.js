@@ -2,11 +2,25 @@ import { describe, it, expect, vi } from 'vitest';
 import { todaysOrdersScreen } from './todays-orders.js';
 import * as ordersService from './backend/services/orders.js';
 import { ViewOrderItems } from './backend/services/orderItems.js';
+import { listMenuItems } from './backend/services/menu.js';
 
-// Mock the backend service (Node can't load the CDN-based supabase-client.js chain)
+// Mock the backend services (Node can't load the CDN-based supabase-client.js chain)
 vi.mock('./backend/services/orders.js', () => ({ listOrders: vi.fn() }));
+vi.mock('./backend/services/orderItems.js', () => ({ ViewOrderItems: vi.fn() }));
+vi.mock('./backend/services/menu.js', () => ({ listMenuItems: vi.fn() }));
 
 const $ = (selector) => document.querySelector(selector);
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+const paidOrder = {
+  orderIdentifier: '1041', orderStatusType: 'Completed', orderTotalAmount: 7.9,
+  orderCreationTimestamp: '2026-11-03T09:00:00Z',
+  payment: { paymentMethodType: 'Credit/Debit', paymentAmountValue: 7.9, paymentCompletionStatus: 'Completed' }
+};
+const unpaidOrder = {
+  orderIdentifier: '1042', orderStatusType: 'Pending', orderTotalAmount: 4.5,
+  orderCreationTimestamp: '2026-11-03T10:00:00Z', payment: null
+};
 
 async function open() {
   document.body.innerHTML = todaysOrdersScreen.render();
@@ -15,15 +29,7 @@ async function open() {
 
 describe('POS-77: Today\'s orders with their status and payment', () => {
   it('should ask for today only and show each order with its status and payment', async () => {
-    ordersService.listOrders.mockResolvedValue({
-      data: [
-        { orderIdentifier: '1041', orderStatusType: 'Completed', orderTotalAmount: 7.9,
-          orderCreationTimestamp: '2026-11-03T09:00:00Z',
-          payment: { paymentMethodType: 'Credit/Debit', paymentAmountValue: 7.9, paymentCompletionStatus: 'Completed' } },
-        { orderIdentifier: '1042', orderStatusType: 'Pending', orderTotalAmount: 4.5,
-          orderCreationTimestamp: '2026-11-03T10:00:00Z', payment: null }
-      ], error: null
-    });
+    ordersService.listOrders.mockResolvedValue({ data: [paidOrder, unpaidOrder], error: null });
     await open();
 
     const { from, to } = ordersService.listOrders.mock.calls[0][0];
@@ -46,18 +52,17 @@ describe('POS-77: Today\'s orders with their status and payment', () => {
 });
 
 describe('POS-86: Tap an order to see its items, customizations and payment', () => {
-  it('should show the order items and their customizations when an order is tapped', async () => {
-    orderService.listOrders.mockResolvedValue({ data: [{menuItemIdentifier: 'm1', menuItemName: 'Latte'}], error: null});
-    listMenuItems.mockResolvedValue({ data: [{menuItemIdentifier: 'm1', menuItemName: 'Latte'}], error:null});
+  it('should show the items with their customizations and the payment when an order is tapped', async () => {
+    ordersService.listOrders.mockResolvedValue({ data: [paidOrder], error: null });
+    listMenuItems.mockResolvedValue({ data: [{ menuItemIdentifier: 'm1', menuItemName: 'Latte' }], error: null });
     ViewOrderItems.mockResolvedValue({
-      data: [ 
-      { orderdItemQuantity:2, associatedMenuItemIdentifier:'m1', itemCustomizationDescription: 'oat milk', itemPriceAmount: 3.95 },
-      { orderedItemQuantity:1, associatedMenuItemIdentifier:'m2', itemCustomizationDescription: 'null', itemPriceAmount: 0 }],
-      error: null
+      data: [
+        { orderedItemQuantity: 2, associatedMenuItemIdentifier: 'm1', itemCustomizationDescription: 'oat milk', itemPriceAmount: 3.95 },
+        { orderedItemQuantity: 1, associatedMenuItemIdentifier: 'm1', itemCustomizationDescription: null, itemPriceAmount: 0 }
+      ], error: null
     });
-    
     await open();
-    expect($('.order-detaill')).toBeNull();
+    expect($('.order-detail')).toBeNull(); // nothing open until the barista taps
 
     $('[data-order-id="1041"] .order-line-info').click();
     await flush();
@@ -74,5 +79,3 @@ describe('POS-86: Tap an order to see its items, customizations and payment', ()
     expect($('.order-detail')).toBeNull();
   });
 });
-
-

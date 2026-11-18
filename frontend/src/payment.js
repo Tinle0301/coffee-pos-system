@@ -126,10 +126,11 @@ export const paymentScreen = {
         <p id="payment-status" role="status"></p>
         <button type="button" id="complete-sale-btn" disabled>Complete sale</button>
 
-        <div id = "receipt-actions" hidden style = "margin-top:12px">
-          <p id = "receipt-status" role = "status"></p>
-          </div>
-          <div id = "receipt" class = "receipt" aria-hidden="true"></div>
+        <div id="receipt-actions" hidden style="margin-top:12px">
+          <button type="button" id="print-receipt-btn" class="btn-ghost">Print receipt</button>
+          <p id="receipt-status" role="status"></p>
+        </div>
+        <div id="receipt" class="receipt" aria-hidden="true"></div>
       </div>
     `;
   },
@@ -168,7 +169,7 @@ export const paymentScreen = {
     const receiptActions = document.getElementById('receipt-actions');
     const printBtn = document.getElementById('print-receipt-btn');
     const receiptStatus = document.getElementById('receipt-status');
-    const receipBox = document.getElementById('receipt');
+    const receiptBox = document.getElementById('receipt');
     let paid = null;
     let printing = false;
 
@@ -254,7 +255,7 @@ export const paymentScreen = {
       completeBtn.textContent = 'Start new order';
     });
 
-    // POS-87
+  // POS-87
     printBtn.addEventListener('click', async () => {
       if (!paid || printing) return;
       printing = true;
@@ -263,38 +264,39 @@ export const paymentScreen = {
       receiptStatus.className = '';
       receiptStatus.textContent = '';
 
-      const [ itemResult, menuResult ] = await Promise.all([
-        lookup(viewOrderItems, orderId),
+      const [itemResult, menuResult] = await Promise.all([
+        lookup(ViewOrderItems, orderId),
         lookup(listMenuItems),
-    ]);
-    printing = false;
-    printBtn.disabled = false;
-    printBtn.textContent = 'Print receipt';
+      ]);
+      printing = false;
+      printBtn.disabled = false;
+      printBtn.textContent = 'Print receipt';
 
-    if (itemResult.error || menuResult.error || itemResult.data || menuResult.data) {
-      receiptStatus.className = 'error';
-      receiptStatus.textContent = 'Could not load the receipt. try again.';
-      return;
-    }
-    const names = new Map(menuResult.data.map((m) => [m.menuItemIdentifier, m.menuItemName]));
-    receiptBox.innerHTML = '';
-    receiptBox.appendChild(buildReceipt({
-      orderId,
-      paidAt: paid.paidAt,
-      items: itemsResult.data.map((item) => ({
-        quantity: item.orderedItemQuantity,
-        name: name.get(item.associatedMenuItemIdentifier) ?? 'Menu item',
-        customizations: item.itemCustomizationDescription,
-        lineTotal: (toCents(item.itemPriceAmount) * item.orderedItemQuantity) /100,
-      })),
-      subtotal: order.orderSybtotalAmount,
-      tax:order.orderTaxAmount,
-      total: order.orderToatlAmount,
-      paymentMethod: paid.method,
-      cashReceiced: paid.cashReceived,
-      changeDue: paid.chaneDue,
+      if (itemResult.error || menuResult.error || !itemResult.data || !menuResult.data) {
+        receiptStatus.className = 'error';
+        receiptStatus.textContent = 'Could not load the receipt. Try again.';
+        return;
+      }
+
+      const names = new Map(menuResult.data.map((m) => [m.menuItemIdentifier, m.menuItemName]));
+      receiptBox.innerHTML = '';
+      receiptBox.appendChild(buildReceipt({
+        orderId,
+        paidAt: paid.paidAt,
+        items: itemResult.data.map((item) => ({
+          quantity: item.orderedItemQuantity,
+          name: names.get(item.associatedMenuItemIdentifier) ?? 'Menu item',
+          customization: item.itemCustomizationDescription,
+          lineTotal: (toCents(item.itemPriceAmount) * item.orderedItemQuantity) / 100,
+        })),
+        subtotal: order.orderSubtotalAmount,
+        tax: order.orderTaxAmount,
+        total: order.orderTotalAmount,
+        paymentMethod: paid.method,
+        cashReceived: paid.cashReceived,
+        changeDue: paid.changeDue,
       }));
-      window.addEventListener('afterprint', () => { receiptBox.innerHTML = ''; }, { once: true});
+      window.addEventListener('afterprint', () => { receiptBox.innerHTML = ''; }, { once: true });
       window.print();
     });
 
