@@ -116,6 +116,23 @@ describe('refundScreen (Admin refund)', () => {
     expect(submitRefund).toHaveBeenCalledWith('pay-1', 'Full', 12.5);
   });
 
+  it('shows the refund ID after a successful refund', async () => {
+    await lookup();
+    $('#refund-review-btn').click();
+    $('#refund-confirm-go').click();
+    await flush();
+    expect($('#refund-result').textContent).toBe('Refunded $12.50 (full). Refund ID: ref-1');
+  });
+
+  it('shows a clean success message when no refund ID came back (POS-84)', async () => {
+    submitRefund.mockResolvedValue({ data: { refundTransactionIdentifier: null }, error: null });
+    await lookup();
+    $('#refund-review-btn').click();
+    $('#refund-confirm-go').click();
+    await flush();
+    expect($('#refund-result').textContent).toBe('Refunded $12.50 (full).');
+  });
+
   it.each([['0'], ['-3'], ['abc'], ['1.999'], ['12.51'], ['']])('rejects an invalid partial amount "%s"', async (value) => {
     await lookup();
     $('input[name="refund-type"][value="Partial"]').click();
