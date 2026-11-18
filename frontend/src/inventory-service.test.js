@@ -31,6 +31,7 @@ const {
   listInventoryItems,
   listLowStockInventoryItems,
   restockInventoryItem,
+  createInventoryItem,
 } = await import('./backend/services/inventory.js');
 
 const inventoryRow = {
@@ -256,5 +257,89 @@ describe('restockInventoryItem', () => {
       code: 'UPDATE_FAILED',
       message: 'Could not restock the inventory item.',
     });
+  });
+});
+
+// -------------------------------------------------------------------------
+// createInventoryItem (POS-85)
+// -------------------------------------------------------------------------
+
+describe('createInventoryItem', () => {
+  const input = {
+    inventoryItemName: '  Oat Milk  ',
+    availableQuantityValue: 20,
+    minimumStockThreshold: 5,
+  };
+
+  beforeEach(() => {
+    query.insert = vi.fn(() => query);
+    query.single = vi.fn();
+  });
+
+  it('inserts a trimmed name and the quantities, and returns the new item', async () => {
+    query.single.mockResolvedValue({
+      data: { ...inventoryRow, inventory_item_name: 'Oat Milk', available_quantity_value: '20.00' },
+      error: null,
+    });
+
+    const { data, error } = await createInventoryItem(input);
+
+    expect(from).toHaveBeenCalledWith('inventory_items');
+    expect(query.insert).toHaveBeenCalledWith({
+      inventory_item_name: 'Oat Milk',
+      available_quantity_value: 20,
+      minimum_stock_threshold: 5,
+    });
+    expect(error).toBeNull();
+    expect(data.inventoryItemName).toBe('Oat Milk');
+    expect(data.availableQuantityValue).toBe(20);
+  });
+
+  it('allows zero stock and a zero reorder level', async () => {
+    query.single.mockResolvedValue({ data: inventoryRow, error: null });
+    const { error } = await createInventoryItem({ ...input, availableQuantityValue: 0, minimumStockThreshold: 0 });
+    expect(error).toBeNull();
+  });
+
+  it('rejects a blank name without calling the database', async () => {
+    const { data, error } = await createInventoryItem({ ...input, inventoryItemName: '   ' });
+    expect(data).toBeNull();
+    expect(error.code).toBe('INVALID_INVENTORY_ITEM');
+    expect(query.insert).not.toHaveBeenCalled();
+  });
+
+  it.each([-1, NaN, 'abc'])('rejects a bad quantity (%s) without calling the database', async (bad) => {
+    const { error } = await createInventoryItem({ ...input, availableQuantityValue: bad });
+    expect(error.code).toBe('INVALID_INVENTORY_ITEM');
+    expect(query.insert).not.toHaveBeenCalled();
+  });
+
+  it('rejects a negative reorder level', async () => {
+    const { error } = await createInventoryItem({ ...input, minimumStockThreshold: -2 });
+    expect(error.code).toBe('INVALID_INVENTORY_ITEM');
+    expect(query.insert).not.toHaveBeenCalled();
+  });
+
+  it('turns a row-level-security refusal into UNAUTHORIZED', async () => {
+    query.single.mockResolvedValue({
+      data: null,
+      error: { code: '42501', message: 'new row violates row-level security policy for table "inventory_items"' },
+    });
+    const { data, error } = await createInventoryItem(input);
+    expect(data).toBeNull();
+    expect(error).toEqual({ code: 'UNAUTHORIZED', message: 'Only an admin can add inventory items.' });
+  });
+
+  it('hides unknown database errors behind CREATE_FAILED', async () => {
+    query.single.mockResolvedValue({ data: null, error: { message: 'connection reset by peer' } });
+    const { error } = await createInventoryItem(input);
+    expect(error).toEqual({ code: 'CREATE_FAILED', message: 'Could not add the inventory item.' });
+  });
+
+  it('never throws', async () => {
+    query.single.mockRejectedValue(new Error('network down'));
+    const { data, error } = await createInventoryItem(input);
+    expect(data).toBeNull();
+    expect(error.code).toBe('CREATE_FAILED');
   });
 });
