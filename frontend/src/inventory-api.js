@@ -6,6 +6,7 @@
 import {
   listInventoryItems,
   restockInventoryItem,
+  createInventoryItem,
 } from './backend/services/inventory.js';
 
 /**
@@ -28,4 +29,15 @@ export async function listInventory() {
  */
 export async function restockInventory(inventoryItemId, quantityToAdd) {
   return restockInventoryItem(inventoryItemId, quantityToAdd);
+}
+
+/**
+ * Add a new stock item (POS-85). Resolves to { data: newItem, error } — the
+ * error messages are already safe to show to the person.
+ *
+ * @param {{ inventoryItemName: string, availableQuantityValue: number, minimumStockThreshold: number }} item
+ * @returns {ReturnType<typeof createInventoryItem>}
+ */
+export async function addInventoryItem(item) {
+  return createInventoryItem(item);
 }
