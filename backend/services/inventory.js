@@ -164,6 +164,74 @@ export async function restockInventoryItem(
   }
 }
 
+/**
+ * Add a new stock item (POS-85). Admin only: the inventory_items_write_admin
+ * policy lets only an active admin insert, so no new database function is
+ * needed. The starting quantity is not written to the stock audit log (that
+ * log records later changes to an existing item's quantity).
+ *
+ * @param {{ inventoryItemName: string, availableQuantityValue: number, minimumStockThreshold: number }} item
+ * @returns {Promise<{
+ *   data: import('../models/inventoryItem.js').InventoryItem | null,
+ *   error: ServiceError | null
+ * }>}
+ */
+export async function createInventoryItem(item) {
+  const name = String(item?.inventoryItemName ?? '').trim();
+  const quantity = Number(item?.availableQuantityValue);
+  const minimum = Number(item?.minimumStockThreshold);
+
+  if (!name) {
+    return {
+      data: null,
+      error: { code: 'INVALID_INVENTORY_ITEM', message: 'Item name is required.' },
+    };
+  }
+  if (
+    !Number.isFinite(quantity) || !Number.isFinite(minimum) ||
+    quantity < 0 || minimum < 0
+  ) {
+    return {
+      data: null,
+      error: {
+        code: 'INVALID_INVENTORY_ITEM',
+        message: 'Quantity and reorder level must be zero or more.',
+      },
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .insert({
+        inventory_item_name: name,
+        available_quantity_value: quantity,
+        minimum_stock_threshold: minimum,
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      const denied =
+        error?.code === '42501' ||
+        /row-level security|permission denied/i.test(error?.message ?? '');
+      return {
+        data: null,
+        error: denied
+          ? { code: 'UNAUTHORIZED', message: 'Only an admin can add inventory items.' }
+          : { code: 'CREATE_FAILED', message: 'Could not add the inventory item.' },
+      };
+    }
+
+    return { data: toInventoryItem(data), error: null };
+  } catch {
+    return {
+      data: null,
+      error: { code: 'CREATE_FAILED', message: 'Could not add the inventory item.' },
+    };
+  }
+}
+
 function toInventoryItem(row) {
   return {
     inventoryItemIdentifier:

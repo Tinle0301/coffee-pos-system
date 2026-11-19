@@ -283,6 +283,24 @@ question.
   than updating `inventory_items` directly so that each successful restock
   is recorded in the inventory stock audit log.
 
+### createInventoryItem
+- **Screen(s):** Admin Inventory ("Add item")
+- **Backend module:** `backend/services/inventory.js` (inserts into
+  `inventory_items`; the `inventory_items_write_admin` RLS policy limits this
+  to active admins, so no new database function is needed)
+- **Input:** an object with
+  - `inventoryItemName`: `string` — required, not blank
+  - `availableQuantityValue`: `number` — starting stock, zero or more
+  - `minimumStockThreshold`: `number` — reorder level, zero or more
+- **Returns:** the new inventory item using the same shape as
+  `listInventoryItems`
+- **Errors:**
+  - blank name, or a quantity/threshold that is not a number >= 0 -> `INVALID_INVENTORY_ITEM`
+  - caller is not an active admin -> `UNAUTHORIZED`
+  - unexpected database failure -> `CREATE_FAILED`
+- **Note:** the starting quantity is not written to the stock audit log; the
+  log records later changes to an existing item's quantity.
+
 ### processPayment
 - **Screen(s):** Checkout
 - **Backend module:** `backend/services/payments.js` (calls the

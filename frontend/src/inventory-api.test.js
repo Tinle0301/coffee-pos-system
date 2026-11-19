@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { listInventory, restockInventory } from './inventory-api.js';
+import { listInventory, restockInventory, addInventoryItem } from './inventory-api.js';
 import { supabase } from './backend/supabase-client.js';
 
 vi.mock('./backend/supabase-client.js', () => ({ supabase: { from: vi.fn(), rpc: vi.fn() } }));
@@ -55,5 +55,35 @@ describe('restockInventory', () => {
     const { error } = await restockInventory('u1', 0);
     expect(error.code).toBe('INVALID_QUANTITY');
     expect(supabase.rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe('addInventoryItem', () => {
+  it('inserts through the inventory service and returns the new item', async () => {
+    const single = vi.fn().mockResolvedValue({ data: {
+      inventory_item_identifier: 'u9', inventory_item_name: 'Oat Milk',
+      available_quantity_value: '20.00', minimum_stock_threshold: '5.00',
+      inventory_last_updated_timestamp: '2026-11-18T12:00:00Z',
+    }, error: null });
+    const insert = vi.fn(() => ({ select: () => ({ single }) }));
+    supabase.from.mockReturnValue({ insert });
+
+    const { data, error } = await addInventoryItem({
+      inventoryItemName: 'Oat Milk', availableQuantityValue: 20, minimumStockThreshold: 5,
+    });
+
+    expect(supabase.from).toHaveBeenCalledWith('inventory_items');
+    expect(insert).toHaveBeenCalledWith({
+      inventory_item_name: 'Oat Milk', available_quantity_value: 20, minimum_stock_threshold: 5,
+    });
+    expect(error).toBeNull();
+    expect(data).toMatchObject({ inventoryItemIdentifier: 'u9', inventoryItemName: 'Oat Milk', availableQuantityValue: 20 });
+  });
+
+  it('rejects a blank name without calling the database', async () => {
+    supabase.from.mockClear();
+    const { error } = await addInventoryItem({ inventoryItemName: '', availableQuantityValue: 1, minimumStockThreshold: 1 });
+    expect(error.code).toBe('INVALID_INVENTORY_ITEM');
+    expect(supabase.from).not.toHaveBeenCalled();
   });
 });

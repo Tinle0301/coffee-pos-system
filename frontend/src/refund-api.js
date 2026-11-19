@@ -3,9 +3,12 @@
 // Every function returns { data, error } and never throws, like the services
 // in ./backend/services/. Authorization is enforced by RLS (refunds_admin_only)
 // and by process_refund() itself (admin only), not by the UI hiding the screen.
+//
+// POS-84: issuing a refund goes through the shared, tested processRefund() in
+// backend/services/refunds.js, not a direct supabase.rpc() call from here.
 import { supabase } from './backend/supabase-client.js';
 import { getPayment } from './backend/services/payments.js';
-import { mapRefundError } from './refund-errors.js';
+import { processRefund } from './backend/services/refunds.js';
 
 /** @typedef {{ code: string, message: string }} ServiceError */
 /** @typedef {{ paymentTransactionIdentifier: string, associatedOrderIdentifier: string, paymentMethodType: string,
@@ -56,20 +59,28 @@ export async function listRecentPayments(limit = 20) {
 }
 
 /**
+ * Issue a refund through the shared refund service (POS-84).
+ *
+ * The service runs process_refund() and then reads the new refund row back.
+ * If only that read-back fails, the money has already been refunded, so we
+ * report success (without an ID) instead of an error. Otherwise the admin
+ * would retry and hit "already refunded".
+ *
  * @param {string} paymentId
  * @param {'Full'|'Partial'} refundType
  * @param {number} amount
- * @returns {Promise<{ data: { refundTransactionIdentifier: string } | null, error: ServiceError | null }>}
+ * @returns {Promise<{ data: { refundTransactionIdentifier: string | null } | null, error: ServiceError | null }>}
  */
 export async function submitRefund(paymentId, refundType, amount) {
   try {
-    const { data, error } = await supabase.rpc('process_refund', {
-      payment_id: paymentId,
-      refund_type: refundType,
-      amount,
-    });
-    if (error) return { data: null, error: mapRefundError(error) };
-    return { data: { refundTransactionIdentifier: data }, error: null };
+    const { data, error } = await processRefund(paymentId, refundType, amount);
+    if (error) {
+      if (error.code === 'LOOKUP_FAILED' || error.code === 'REFUND_NOT_FOUND') {
+        return { data: { refundTransactionIdentifier: null }, error: null };
+      }
+      return { data: null, error: { code: error.code, message: error.message } };
+    }
+    return { data: { refundTransactionIdentifier: data.refundTransactionIdentifier }, error: null };
   } catch {
     return { data: null, error: { code: 'REFUND_FAILED', message: 'Could not reach the server. Try again.' } };
   }
