@@ -47,7 +47,10 @@ Live site: https://coffee-pos-system-omega.vercel.app — best on a tablet
 3. **Complete sale**. You'll see "Sale complete." (and the change to
    give for cash). Stock for the order's recipe is deducted at this
    moment.
-4. **Start new order** for the next customer.
+4. **Print receipt** (optional) opens the browser's print window with just
+   the receipt: shop name, order number, items, subtotal, tax, total,
+   payment method and time. Choose a printer, or **Save as PDF**.
+5. **Start new order** for the next customer.
 
 ### 3. Make the drinks — Active Orders
 
@@ -69,6 +72,10 @@ Header → **Today's Orders**: every order from today, newest first, with
 its status, payment (method and amount, or "Unpaid") and total. Baristas
 see their own orders; admins see everyone's.
 
+Tap an order to see its details: each item with its size, milk and
+add-ons, the subtotal, tax and total, and the payment (method, amount,
+time). Tap it again to close it. **Refresh** keeps open orders open.
+
 ---
 
 ## Admin
@@ -88,8 +95,10 @@ how many items are low on stock.
   shows only low and out-of-stock items.
 - **Restock** adds an amount to an item. Every change (restock or checkout)
   is recorded in the stock log.
-- New stock items and recipes (which menu item uses how much) are added in
-  the Supabase SQL Editor for now; see SETUP.md.
+- **+ Add item** creates a new stock item: name, starting amount on hand
+  and reorder level (flagged low at or below it). A name that already exists is rejected.
+- Recipes (which menu item uses how much stock) are still set up in the
+  Supabase SQL Editor; see SETUP.md.
 
 ### Staff Accounts
 - Change a person's role (Barista / Admin), **Deactivate** or
